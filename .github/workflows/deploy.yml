@@ -43,7 +43,11 @@ jobs:
             echo "Building application..."
             npm run build
             echo "Restarting application..."
-            # Adjust the restart command based on your CloudPanel setup.
-            # If utilizing CloudPanel's expected entry point 'npm start' usually just works if handled by PM2.
-            # Often standard PM2 is used:
-            pm2 restart all || npm start
+            # Start/Restart specific process on port 3000
+            pm2 describe ledger-frontend > /dev/null
+            if [ $? -eq 0 ]; then
+              pm2 restart ledger-frontend
+            else
+              pm2 start npm --name "ledger-frontend" -- start -- -p 3001
+            fi
+            pm2 save
