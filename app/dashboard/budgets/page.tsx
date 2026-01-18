@@ -5,7 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Plus, TrendingUp, AlertTriangle, CheckCircle2, PiggyBank, Edit, Trash2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalDescription,
+  ResponsiveModalBody,
+  ResponsiveModalFooter,
+} from '@/components/ui/responsive-modal';
 
 interface Budget {
   id: number;
@@ -348,46 +356,46 @@ export default function BudgetsPage() {
 
       {/* Overview Stats */}
       {overview && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Budgeted</CardDescription>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Card className="py-3 sm:py-6">
+            <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6">
+              <CardDescription className="text-xs sm:text-sm">Total Budgeted</CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-slate-900">
+            <CardContent className="px-3 sm:px-6">
+              <p className="text-lg sm:text-2xl font-bold text-slate-900">
                 {formatCurrency(overview.total_budgeted)}
               </p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Spent</CardDescription>
+          <Card className="py-3 sm:py-6">
+            <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6">
+              <CardDescription className="text-xs sm:text-sm">Total Spent</CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-slate-900">
+            <CardContent className="px-3 sm:px-6">
+              <p className="text-lg sm:text-2xl font-bold text-slate-900">
                 {formatCurrency(overview.total_spent)}
               </p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Remaining</CardDescription>
+          <Card className="py-3 sm:py-6">
+            <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6">
+              <CardDescription className="text-xs sm:text-sm">Remaining</CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-green-600">
+            <CardContent className="px-3 sm:px-6">
+              <p className="text-lg sm:text-2xl font-bold text-green-600">
                 {formatCurrency(overview.total_remaining)}
               </p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Overall Usage</CardDescription>
+          <Card className="py-3 sm:py-6">
+            <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6">
+              <CardDescription className="text-xs sm:text-sm">Overall Usage</CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-slate-900">
+            <CardContent className="px-3 sm:px-6">
+              <p className="text-lg sm:text-2xl font-bold text-slate-900">
                 {overview.percentage_used.toFixed(1)}%
               </p>
             </CardContent>
@@ -397,17 +405,17 @@ export default function BudgetsPage() {
 
       {/* Warnings */}
       {overview && overview.warnings.length > 0 && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-yellow-900">
-              <AlertTriangle className="h-5 w-5" />
+        <Card className="border-yellow-200 bg-yellow-50 py-3 sm:py-6">
+          <CardHeader className="px-4 sm:px-6 pb-2">
+            <CardTitle className="flex items-center gap-2 text-yellow-900 text-sm sm:text-base">
+              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
               Budget Alerts
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 px-4 sm:px-6">
             {overview.warnings.map((warning, index) => (
-              <div key={index} className="flex items-start gap-2 text-sm text-yellow-800">
-                <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <div key={index} className="flex items-start gap-2 text-xs sm:text-sm text-yellow-800">
+                <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 mt-0.5 flex-shrink-0" />
                 <span><strong>{warning.category_name}:</strong> {warning.message}</span>
               </div>
             ))}
@@ -416,33 +424,33 @@ export default function BudgetsPage() {
       )}
 
       {/* Budget List */}
-      <div className="grid gap-4">
+      <div className="grid gap-3 sm:gap-4">
         {budgets.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <PiggyBank className="h-12 w-12 text-slate-300 mb-4" />
-              <p className="text-slate-600 text-center">
+          <Card className="py-6 sm:py-6">
+            <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12 px-4 sm:px-6">
+              <PiggyBank className="h-10 w-10 sm:h-12 sm:w-12 text-slate-300 mb-3 sm:mb-4" />
+              <p className="text-slate-600 text-center text-sm sm:text-base">
                 No budgets set for {monthNames[selectedMonth - 1]} {selectedYear}
               </p>
-              <Button onClick={() => setCreateDialogOpen(true)} className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
+              <Button onClick={() => setCreateDialogOpen(true)} className="mt-4 text-xs sm:text-sm h-9 sm:h-10">
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                 Create Your First Budget
               </Button>
             </CardContent>
           </Card>
         ) : (
           budgets.map((budget) => (
-            <Card key={budget.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
+            <Card key={budget.id} className="hover:shadow-md transition-shadow py-3 sm:py-6">
+              <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <div
-                      className="w-3 h-3 rounded-full"
+                      className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full"
                       style={{ backgroundColor: budget.category.color }}
                     />
                     <div>
-                      <CardTitle className="text-lg">{budget.category.name}</CardTitle>
-                      <CardDescription className="text-xs mt-1">
+                      <CardTitle className="text-base sm:text-lg">{budget.category.name}</CardTitle>
+                      <CardDescription className="text-[10px] sm:text-xs mt-0.5 sm:mt-1">
                         {budget.rollover_enabled && budget.rollover_amount > 0 && (
                           <span className="text-green-600">
                             +{formatCurrency(budget.rollover_amount)} rollover
@@ -453,15 +461,15 @@ export default function BudgetsPage() {
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="text-right">
-                      <p className={`text-lg font-bold ${getStatusColor(budget)}`}>
+                      <p className={`text-base sm:text-lg font-bold ${getStatusColor(budget)}`}>
                         {budget.percentage_used.toFixed(0)}%
                       </p>
                       {budget.is_exceeded ? (
-                        <span className="text-xs text-red-600 font-medium">Over Budget</span>
+                        <span className="text-[10px] sm:text-xs text-red-600 font-medium">Over Budget</span>
                       ) : budget.is_near_limit ? (
-                        <span className="text-xs text-yellow-600 font-medium">Near Limit</span>
+                        <span className="text-[10px] sm:text-xs text-yellow-600 font-medium">Near Limit</span>
                       ) : (
-                        <span className="text-xs text-green-600 font-medium">On Track</span>
+                        <span className="text-[10px] sm:text-xs text-green-600 font-medium">On Track</span>
                       )}
                     </div>
                     <div className="flex gap-1">
@@ -469,35 +477,35 @@ export default function BudgetsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => openEditDialog(budget)}
-                        className="h-8 w-8 p-0"
+                        className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteBudget(budget.id)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                        className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-red-600 hover:text-red-700"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </Button>
                     </div>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2 sm:space-y-3 px-3 sm:px-6">
                 <div className="relative">
                   <Progress
                     value={Math.min(budget.percentage_used, 100)}
-                    className="h-3"
+                    className="h-2 sm:h-3"
                   />
                   <div
-                    className={`absolute top-0 left-0 h-3 rounded-full ${getProgressColor(budget.percentage_used)}`}
+                    className={`absolute top-0 left-0 h-2 sm:h-3 rounded-full ${getProgressColor(budget.percentage_used)}`}
                     style={{ width: `${Math.min(budget.percentage_used, 100)}%` }}
                   />
                 </div>
 
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs sm:text-sm">
                   <div>
                     <p className="text-slate-600">Spent</p>
                     <p className="font-semibold text-slate-900">{formatCurrency(budget.spent)}</p>
@@ -520,12 +528,16 @@ export default function BudgetsPage() {
       </div>
 
       {/* Create Budget Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create New Budget</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleCreateBudget} className="p-6 space-y-4">
+      <ResponsiveModal open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <ResponsiveModalContent>
+          <ResponsiveModalHeader>
+            <ResponsiveModalTitle>Create New Budget</ResponsiveModalTitle>
+            <ResponsiveModalDescription>
+              Set a monthly spending limit for a category
+            </ResponsiveModalDescription>
+          </ResponsiveModalHeader>
+          <form onSubmit={handleCreateBudget} className="flex flex-col h-full">
+            <ResponsiveModalBody className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Category *
@@ -590,32 +602,37 @@ export default function BudgetsPage() {
                 </span>
               </label>
             </div>
+            </ResponsiveModalBody>
 
-            <div className="flex gap-3 pt-4">
+            <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setCreateDialogOpen(false)}
-                className="flex-1"
+                className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 border-zinc-300 hover:bg-zinc-100"
                 disabled={submitting}
               >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1" disabled={submitting}>
+              <Button type="submit" className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 bg-zinc-900 hover:bg-zinc-800 text-white" disabled={submitting}>
                 {submitting ? 'Creating...' : 'Create Budget'}
               </Button>
-            </div>
+            </ResponsiveModalFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
 
       {/* Edit Budget Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Budget</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleEditBudget} className="p-6 space-y-4">
+      <ResponsiveModal open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <ResponsiveModalContent>
+          <ResponsiveModalHeader>
+            <ResponsiveModalTitle>Edit Budget</ResponsiveModalTitle>
+            <ResponsiveModalDescription>
+              Update your budget settings
+            </ResponsiveModalDescription>
+          </ResponsiveModalHeader>
+          <form onSubmit={handleEditBudget} className="flex flex-col h-full">
+            <ResponsiveModalBody className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Category
@@ -670,8 +687,9 @@ export default function BudgetsPage() {
                 </span>
               </label>
             </div>
+            </ResponsiveModalBody>
 
-            <div className="flex gap-3 pt-4">
+            <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6">
               <Button
                 type="button"
                 variant="outline"
@@ -679,18 +697,18 @@ export default function BudgetsPage() {
                   setEditDialogOpen(false);
                   setEditingBudget(null);
                 }}
-                className="flex-1"
+                className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 border-zinc-300 hover:bg-zinc-100"
                 disabled={submitting}
               >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1" disabled={submitting}>
+              <Button type="submit" className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 bg-zinc-900 hover:bg-zinc-800 text-white" disabled={submitting}>
                 {submitting ? 'Updating...' : 'Update Budget'}
               </Button>
-            </div>
+            </ResponsiveModalFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
     </div>
   );
 }

@@ -7,7 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalDescription,
+  ResponsiveModalBody,
+  ResponsiveModalFooter,
+} from '@/components/ui/responsive-modal';
 import { Plus, Wallet, Trash2, DollarSign, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -140,14 +148,14 @@ export default function FundSourcesPage() {
       {/* Total Income Card */}
       {sources.length > 0 && (
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-          <CardHeader>
-            <CardTitle className="text-green-900">Total Income</CardTitle>
-            <CardDescription className="text-green-700">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-green-900 text-lg sm:text-xl">Total Income</CardTitle>
+            <CardDescription className="text-green-700 text-xs sm:text-sm">
               All recorded cash & wallets
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold text-green-900">
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+            <p className="text-3xl sm:text-4xl font-bold text-green-900">
               {formatCurrency(getTotalIncome())}
             </p>
           </CardContent>
@@ -167,55 +175,55 @@ export default function FundSourcesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
           {sources.map((source) => (
-            <Card key={source.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
+            <Card key={source.id} className="hover:shadow-lg transition-shadow py-3 sm:py-6">
+              <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-green-100 rounded-lg p-2">
-                      <DollarSign className="h-6 w-6 text-green-600" />
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="bg-green-100 rounded-lg p-1.5 sm:p-2">
+                      <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">{source.source_name}</CardTitle>
-                      <CardDescription className="text-xs">
+                      <CardTitle className="text-base sm:text-lg">{source.source_name}</CardTitle>
+                      <CardDescription className="text-[10px] sm:text-xs">
                         {format(new Date(source.created_at), 'MMM dd, yyyy')}
                       </CardDescription>
                     </div>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="px-3 sm:px-6">
+                <div className="space-y-3 sm:space-y-4">
                   <div>
-                    <p className="text-sm text-slate-600 mb-1">Amount</p>
-                    <p className="text-2xl font-bold text-green-600">
+                    <p className="text-xs sm:text-sm text-slate-600 mb-0.5 sm:mb-1">Amount</p>
+                    <p className="text-xl sm:text-2xl font-bold text-green-600">
                       {formatCurrency(source.amount)}
                     </p>
                   </div>
                   {source.description && (
                     <div>
-                      <p className="text-sm text-slate-600 mb-1">Description</p>
-                      <p className="text-sm text-slate-900">{source.description}</p>
+                      <p className="text-xs sm:text-sm text-slate-600 mb-0.5 sm:mb-1">Description</p>
+                      <p className="text-xs sm:text-sm text-slate-900">{source.description}</p>
                     </div>
                   )}
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 h-8 sm:h-9 text-xs sm:text-sm"
                       onClick={() => handleEdit(source)}
                     >
-                      <Edit className="h-4 w-4 mr-1" />
+                      <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                       Edit
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 h-8 sm:h-9 text-xs sm:text-sm"
                       onClick={() => handleDelete(source.id)}
                     >
-                      <Trash2 className="h-4 w-4 mr-1" />
+                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                       Delete
                     </Button>
                   </div>
@@ -227,17 +235,18 @@ export default function FundSourcesPage() {
       )}
 
       {/* Add Fund Source Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <form onSubmit={handleSubmit}>
-            <DialogHeader>
-              <DialogTitle>{editMode ? 'Edit' : 'Add'} Fund Source</DialogTitle>
-              <DialogDescription>
-                {editMode ? 'Update your' : 'Record a new'} income or funding source
-              </DialogDescription>
-            </DialogHeader>
+      <ResponsiveModal open={dialogOpen} onOpenChange={setDialogOpen}>
+        <ResponsiveModalContent>
+          <ResponsiveModalHeader>
+            <ResponsiveModalTitle>{editMode ? 'Edit' : 'Add'} Fund Source</ResponsiveModalTitle>
+            <ResponsiveModalDescription>
+              {editMode ? 'Update your' : 'Record a new'} income or funding source
+            </ResponsiveModalDescription>
+          </ResponsiveModalHeader>
+          <form onSubmit={handleSubmit} className="flex flex-col h-full">
+            <ResponsiveModalBody className="space-y-4">
 
-            <div className="px-6 py-4 space-y-4">
+
               {error && (
                 <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
                   {error}
@@ -287,9 +296,9 @@ export default function FundSourcesPage() {
                   rows={3}
                 />
               </div>
-            </div>
+            </ResponsiveModalBody>
 
-            <DialogFooter>
+            <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6">
               <Button
                 type="button"
                 variant="outline"
@@ -300,16 +309,17 @@ export default function FundSourcesPage() {
                   setFormData({ source_name: '', amount: '', description: '' });
                 }}
                 disabled={submitting}
+                className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 border-zinc-300 hover:bg-zinc-100"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting} className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 bg-emerald-600 hover:bg-emerald-700 text-white">
                 {submitting ? (editMode ? 'Updating...' : 'Adding...') : (editMode ? 'Update Source' : 'Add Source')}
               </Button>
-            </DialogFooter>
+            </ResponsiveModalFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
     </div>
   );
 }

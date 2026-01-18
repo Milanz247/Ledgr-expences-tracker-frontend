@@ -297,20 +297,20 @@ export default function CategoriesPage() {
           </div>
         </ResponsiveModalBody>
 
-        <ResponsiveModalFooter className="border-t border-zinc-200/60 bg-zinc-50/50">
+        <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6">
           <Button
             type="button"
             variant="outline"
             onClick={handleCloseDialog}
             disabled={submitting}
-            className="flex-1 lg:flex-none h-12 lg:h-10"
+            className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 border-zinc-300 hover:bg-zinc-100"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={submitting}
-            className="flex-1 lg:flex-none h-12 lg:h-10 bg-zinc-900 hover:bg-zinc-800"
+            className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 bg-zinc-900 hover:bg-zinc-800 text-white"
           >
             {submitting ? (
               <>
@@ -352,29 +352,29 @@ export default function CategoriesPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <Card className="border-rose-200/60 bg-gradient-to-br from-rose-50/80 to-rose-100/40">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-rose-600">Expense Categories</p>
-                <p className="text-2xl font-bold text-rose-700 mt-1">{expenseCount}</p>
+                <p className="text-[10px] sm:text-xs font-medium text-rose-600">Expense Categories</p>
+                <p className="text-xl sm:text-2xl font-bold text-rose-700 mt-1">{expenseCount}</p>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-rose-100 flex items-center justify-center">
-                <TrendingDown className="h-5 w-5 text-rose-600" />
+              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-rose-100 flex items-center justify-center">
+                <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-rose-600" />
               </div>
             </div>
           </CardContent>
         </Card>
         <Card className="border-emerald-200/60 bg-gradient-to-br from-emerald-50/80 to-emerald-100/40">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-emerald-600">Income Categories</p>
-                <p className="text-2xl font-bold text-emerald-700 mt-1">{incomeCount}</p>
+                <p className="text-[10px] sm:text-xs font-medium text-emerald-600">Income Categories</p>
+                <p className="text-xl sm:text-2xl font-bold text-emerald-700 mt-1">{incomeCount}</p>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-emerald-600" />
+              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
               </div>
             </div>
           </CardContent>
@@ -445,20 +445,20 @@ export default function CategoriesPage() {
                   className="border-zinc-200/60 bg-white/80 hover:bg-zinc-50/50 transition-colors"
                 >
                   <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <div
-                        className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                        className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl flex items-center justify-center shrink-0"
                         style={{ backgroundColor: category.color }}
                       >
-                        <IconComponent className="h-5 w-5 text-white" />
+                        <IconComponent className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-zinc-900 truncate">{category.name}</p>
+                          <p className="font-medium text-zinc-900 truncate text-sm sm:text-base">{category.name}</p>
                           <Badge
                             variant="secondary"
                             className={cn(
-                              'text-xs shrink-0',
+                              'text-[10px] sm:text-xs shrink-0 px-1.5 py-0 sm:px-2.5 sm:py-0.5',
                               category.type === 'expense'
                                 ? 'bg-rose-100 text-rose-700'
                                 : 'bg-emerald-100 text-emerald-700'
@@ -467,7 +467,7 @@ export default function CategoriesPage() {
                             {category.type}
                           </Badge>
                         </div>
-                        <p className="text-xs text-zinc-500 mt-0.5">
+                        <p className="text-[10px] sm:text-xs text-zinc-500 mt-0.5">
                           {category.user_id ? 'Custom' : 'Default'}
                         </p>
                       </div>
@@ -477,17 +477,17 @@ export default function CategoriesPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(category)}
-                            className="h-8 w-8 p-0"
+                            className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                           >
-                            <Edit className="h-4 w-4 text-zinc-400" />
+                            <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-zinc-400" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDelete(category)}
-                            className="h-8 w-8 p-0"
+                            className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                           >
-                            <Trash2 className="h-4 w-4 text-rose-400" />
+                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-rose-400" />
                           </Button>
                         </div>
                       )}

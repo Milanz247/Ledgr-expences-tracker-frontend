@@ -6,7 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalDescription,
+  ResponsiveModalBody,
+  ResponsiveModalFooter,
+} from '@/components/ui/responsive-modal';
 import { Plus, Landmark, Trash2, Edit } from 'lucide-react';
 
 interface BankAccount {
@@ -141,29 +149,29 @@ export default function BankAccountsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
           {accounts.map((account) => (
-            <Card key={account.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
+            <Card key={account.id} className="hover:shadow-lg transition-shadow py-3 sm:py-6">
+              <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 rounded-lg p-2">
-                      <Landmark className="h-6 w-6 text-primary" />
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="bg-primary/10 rounded-lg p-1.5 sm:p-2">
+                      <Landmark className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">{account.bank_name}</CardTitle>
-                      <CardDescription className="text-xs">
+                      <CardTitle className="text-base sm:text-lg">{account.bank_name}</CardTitle>
+                      <CardDescription className="text-[10px] sm:text-xs">
                         {account.account_number}
                       </CardDescription>
                     </div>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="px-3 sm:px-6">
+                <div className="space-y-3 sm:space-y-4">
                   <div>
-                    <p className="text-sm text-slate-600 mb-1">Current Balance</p>
-                    <p className="text-2xl font-bold text-slate-900">
+                    <p className="text-xs sm:text-sm text-slate-600 mb-0.5 sm:mb-1">Current Balance</p>
+                    <p className="text-xl sm:text-2xl font-bold text-slate-900">
                       {formatCurrency(account.balance)}
                     </p>
                   </div>
@@ -171,19 +179,19 @@ export default function BankAccountsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 h-8 sm:h-9 text-xs sm:text-sm"
                       onClick={() => handleEdit(account)}
                     >
-                      <Edit className="h-4 w-4 mr-1" />
+                      <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                       Edit
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 h-8 sm:h-9 text-xs sm:text-sm"
                       onClick={() => handleDelete(account.id)}
                     >
-                      <Trash2 className="h-4 w-4 mr-1" />
+                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                       Delete
                     </Button>
                   </div>
@@ -195,17 +203,18 @@ export default function BankAccountsPage() {
       )}
 
       {/* Add Account Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <form onSubmit={handleSubmit}>
-            <DialogHeader>
-              <DialogTitle>{editMode ? 'Edit' : 'Add'} Bank Account</DialogTitle>
-              <DialogDescription>
-                {editMode ? 'Update' : 'Add a new'} bank account to track your finances
-              </DialogDescription>
-            </DialogHeader>
+      <ResponsiveModal open={dialogOpen} onOpenChange={setDialogOpen}>
+        <ResponsiveModalContent>
+          <ResponsiveModalHeader>
+            <ResponsiveModalTitle>{editMode ? 'Edit' : 'Add'} Bank Account</ResponsiveModalTitle>
+            <ResponsiveModalDescription>
+              {editMode ? 'Update' : 'Add a new'} bank account to track your finances
+            </ResponsiveModalDescription>
+          </ResponsiveModalHeader>
+          <form onSubmit={handleSubmit} className="flex flex-col h-full">
+            <ResponsiveModalBody className="space-y-4">
 
-            <div className="px-6 py-4 space-y-4">
+
               {error && (
                 <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
                   {error}
@@ -255,9 +264,9 @@ export default function BankAccountsPage() {
                   disabled={submitting}
                 />
               </div>
-            </div>
+            </ResponsiveModalBody>
 
-            <DialogFooter>
+            <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6">
               <Button
                 type="button"
                 variant="outline"
@@ -267,16 +276,17 @@ export default function BankAccountsPage() {
                   setEditingId(null);
                 }}
                 disabled={submitting}
+                className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 border-zinc-300 hover:bg-zinc-100"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting} className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 bg-zinc-900 hover:bg-zinc-800 text-white">
                 {submitting ? (editMode ? 'Updating...' : 'Adding...') : (editMode ? 'Update Account' : 'Add Account')}
               </Button>
-            </DialogFooter>
+            </ResponsiveModalFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
     </div>
   );
 }

@@ -8,8 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerBody } from '@/components/ui/drawer';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalDescription,
+  ResponsiveModalBody,
+  ResponsiveModalFooter,
+} from '@/components/ui/responsive-modal';
 import { Plus, CreditCard, Trash2, DollarSign, Calendar, User, AlertCircle, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -61,7 +68,7 @@ export default function LoansPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [repayDialogOpen, setRepayDialogOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+
   const [paymentMethod, setPaymentMethod] = useState<'bank' | 'fund'>('bank');
 
   const [loanFormData, setLoanFormData] = useState({
@@ -86,14 +93,6 @@ export default function LoansPage() {
 
   useEffect(() => {
     fetchData();
-
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-
-    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const fetchData = async () => {
@@ -286,17 +285,17 @@ export default function LoansPage() {
 
       {/* Total Debt Card */}
       <Card className="border-red-200 bg-red-50">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-red-600">Total Outstanding Debt</p>
-              <p className="text-3xl font-bold text-red-700 mt-2">{formatCurrency(totalDebt)}</p>
-              <p className="text-xs text-red-600 mt-1">
+              <p className="text-xs sm:text-sm font-medium text-red-600">Total Outstanding Debt</p>
+              <p className="text-2xl sm:text-3xl font-bold text-red-700 mt-1 sm:mt-2">{formatCurrency(totalDebt)}</p>
+              <p className="text-[10px] sm:text-xs text-red-600 mt-1">
                 {loans.filter(l => l.status !== 'paid').length} active {loans.filter(l => l.status !== 'paid').length === 1 ? 'loan' : 'loans'}
               </p>
             </div>
-            <div className="bg-red-100 rounded-full p-4">
-              <CreditCard className="h-8 w-8 text-red-600" />
+            <div className="bg-red-100 rounded-full p-2.5 sm:p-4">
+              <CreditCard className="h-5 w-5 sm:h-8 sm:w-8 text-red-600" />
             </div>
           </div>
         </CardContent>
@@ -315,15 +314,15 @@ export default function LoansPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {loans.map((loan) => (
             <Card key={loan.id} className="shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex items-start justify-between mb-2 sm:mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <User className="h-4 w-4 text-slate-600" />
-                      <h3 className="font-semibold text-lg text-slate-900">{loan.lender_name}</h3>
+                    <div className="flex items-center gap-2 mb-1 sm:mb-2">
+                      <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-600" />
+                      <h3 className="font-semibold text-base sm:text-lg text-slate-900">{loan.lender_name}</h3>
                     </div>
                     {getStatusBadge(loan.status)}
                   </div>
@@ -332,73 +331,73 @@ export default function LoansPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleEdit(loan)}
-                      className="text-slate-600 hover:text-slate-700 hover:bg-slate-50"
+                      className="text-slate-600 hover:text-slate-700 hover:bg-slate-50 h-7 w-7 sm:h-8 sm:w-8 p-0"
                     >
-                      <Edit className="h-4 w-4" />
+                      <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(loan.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 h-7 w-7 sm:h-8 sm:w-8 p-0"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Original Amount:</span>
-                    <span className="font-semibold text-slate-900">{formatCurrency(loan.amount)}</span>
+                    <span className="text-xs sm:text-sm text-slate-600">Original Amount:</span>
+                    <span className="font-semibold text-sm sm:text-base text-slate-900">{formatCurrency(loan.amount)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Remaining:</span>
-                    <span className="font-bold text-red-600">{formatCurrency(loan.balance_remaining)}</span>
+                    <span className="text-xs sm:text-sm text-slate-600">Remaining:</span>
+                    <span className="font-bold text-sm sm:text-base text-red-600">{formatCurrency(loan.balance_remaining)}</span>
                   </div>
 
                   {/* Progress Bar */}
-                  <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div className="w-full bg-slate-200 rounded-full h-1.5 sm:h-2">
                     <div
-                      className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                      className="bg-green-500 h-1.5 sm:h-2 rounded-full transition-all duration-300"
                       style={{ width: `${((loan.amount - loan.balance_remaining) / loan.amount) * 100}%` }}
                     />
                   </div>
-                  <div className="text-xs text-slate-600 text-right">
+                  <div className="text-[10px] sm:text-xs text-slate-600 text-right">
                     {Math.round(((loan.amount - loan.balance_remaining) / loan.amount) * 100)}% paid
                   </div>
 
                   {loan.due_date && (
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Calendar className="h-4 w-4" />
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600">
+                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       Due: {format(new Date(loan.due_date), 'MMM dd, yyyy')}
                     </div>
                   )}
 
                   {loan.description && (
-                    <p className="text-sm text-slate-600 mt-2">{loan.description}</p>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-2">{loan.description}</p>
                   )}
 
                   {/* Funding Source Indicator */}
                   {loan.is_funding_source && (
-                    <div className="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                    <div className="mt-3 p-2 sm:p-3 bg-purple-50 border border-purple-200 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-purple-700">💰 Funding Source</span>
-                        <span className="text-xs text-purple-600">
+                        <span className="text-[10px] sm:text-xs font-semibold text-purple-700">💰 Funding Source</span>
+                        <span className="text-[10px] sm:text-xs text-purple-600">
                           {formatCurrency(loan.available_balance || 0)} available
                         </span>
                       </div>
                       {loan.expenses && loan.expenses.length > 0 && (
                         <div className="mt-2 space-y-1">
-                          <p className="text-xs font-medium text-purple-700">{loan.expenses.length} expense(s) paid:</p>
+                          <p className="text-[10px] sm:text-xs font-medium text-purple-700">{loan.expenses.length} expense(s) paid:</p>
                           {loan.expenses.slice(0, 3).map((expense) => (
-                            <div key={expense.id} className="flex items-center justify-between text-xs">
+                            <div key={expense.id} className="flex items-center justify-between text-[10px] sm:text-xs">
                               <span className="text-purple-600 truncate">{expense.category.name}</span>
                               <span className="text-purple-700 font-medium">{formatCurrency(expense.amount)}</span>
                             </div>
                           ))}
                           {loan.expenses.length > 3 && (
-                            <p className="text-xs text-purple-500 italic">+{loan.expenses.length - 3} more...</p>
+                            <p className="text-[10px] sm:text-xs text-purple-500 italic">+{loan.expenses.length - 3} more...</p>
                           )}
                         </div>
                       )}
@@ -409,10 +408,10 @@ export default function LoansPage() {
                 {loan.status !== 'paid' && (
                   <Button
                     onClick={() => openRepayDialog(loan)}
-                    className="w-full mt-4"
+                    className="w-full mt-3 sm:mt-4 h-9 sm:h-10 text-xs sm:text-sm"
                     variant="default"
                   >
-                    <DollarSign className="h-4 w-4 mr-2" />
+                    <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2" />
                     Make Repayment
                   </Button>
                 )}
@@ -423,454 +422,170 @@ export default function LoansPage() {
       )}
 
       {/* Add Loan Dialog/Drawer */}
-      {isMobile ? (
-        <Drawer open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DrawerContent>
-            <form onSubmit={handleSubmit}>
-              <DrawerHeader>
-                <DrawerTitle>{editMode ? 'Edit' : 'Add'} Loan</DrawerTitle>
-                <DrawerDescription>
-                  Record money you've borrowed
-                </DrawerDescription>
-              </DrawerHeader>
-
-              <DrawerBody>
-                <div className="px-6 py-3 pb-40 space-y-3">
-                  {error && (
-                    <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                      {error}
-                    </div>
-                  )}
-
-                  <div className="space-y-1">
-                    <Label htmlFor="lender_name" className="text-sm">Lender Name</Label>
-                    <Input
-                      id="lender_name"
-                      placeholder="e.g., John, ABC Bank"
-                      value={loanFormData.lender_name}
-                      onChange={(e) => setLoanFormData({ ...loanFormData, lender_name: e.target.value })}
-                      required
-                      disabled={submitting}
-                      className="min-h-[40px] text-sm"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="amount" className="text-sm">Amount Borrowed</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      placeholder="e.g., 10000"
-                      value={loanFormData.amount}
-                      onChange={(e) => setLoanFormData({ ...loanFormData, amount: e.target.value })}
-                      required
-                      disabled={submitting}
-                      className="min-h-[40px] text-sm"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="due_date" className="text-sm">Due Date (Optional)</Label>
-                    <Input
-                      id="due_date"
-                      type="date"
-                      value={loanFormData.due_date}
-                      onChange={(e) => setLoanFormData({ ...loanFormData, due_date: e.target.value })}
-                      disabled={submitting}
-                      className="min-h-[40px] text-sm"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="description" className="text-sm">Description (Optional)</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="e.g., Emergency loan"
-                      value={loanFormData.description}
-                      onChange={(e) => setLoanFormData({ ...loanFormData, description: e.target.value })}
-                      disabled={submitting}
-                      rows={2}
-                      className="text-sm"
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2 pt-2">
-                    <Checkbox
-                      id="is_funding_source"
-                      checked={loanFormData.is_funding_source}
-                      onCheckedChange={(checked) =>
-                        setLoanFormData({ ...loanFormData, is_funding_source: checked as boolean })
-                      }
-                      disabled={submitting}
-                    />
-                    <Label
-                      htmlFor="is_funding_source"
-                      className="text-sm font-normal cursor-pointer"
-                    >
-                      Use this loan as a Cash Wallet?
-                    </Label>
-                  </div>
+      {/* Add Loan Dialog */}
+      <ResponsiveModal open={dialogOpen} onOpenChange={setDialogOpen}>
+        <ResponsiveModalContent>
+          <ResponsiveModalHeader>
+            <ResponsiveModalTitle>{editMode ? 'Edit' : 'Add'} Loan</ResponsiveModalTitle>
+            <ResponsiveModalDescription>
+              Record money you've borrowed
+            </ResponsiveModalDescription>
+          </ResponsiveModalHeader>
+          
+          <form onSubmit={handleSubmit} className="flex flex-col h-full">
+            <ResponsiveModalBody className="space-y-3">
+              {error && (
+                <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  {error}
                 </div>
-              </DrawerBody>
+              )}
 
-              <DrawerFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setDialogOpen(false);
-                    setEditMode(false);
-                    setEditingId(null);
-                  }}
-                  disabled={submitting}
-                  className="min-h-[50px] w-full sm:w-auto text-base sm:text-sm font-semibold"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={submitting} className="min-h-[50px] w-full sm:w-auto text-base sm:text-sm font-semibold">
-                  {submitting ? (editMode ? 'Updating...' : 'Adding...') : (editMode ? 'Update Loan' : 'Add Loan')}
-                </Button>
-              </DrawerFooter>
-            </form>
-          </DrawerContent>
-        </Drawer>
-      ) : (
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent>
-            <form onSubmit={handleSubmit}>
-              <DialogHeader>
-                <DialogTitle>{editMode ? 'Edit' : 'Add'} Loan</DialogTitle>
-                <DialogDescription>
-                  Record money you've borrowed
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="px-6 py-4 space-y-4">
-                {error && (
-                  <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                    {error}
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="lender_name">Lender Name</Label>
+              {/* Row 1: Lender Name + Amount */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="lender_name" className="text-sm font-medium text-slate-700 mb-1">Lender Name</Label>
                   <Input
                     id="lender_name"
-                    placeholder="e.g., John, ABC Bank"
+                    placeholder="e.g., John"
                     value={loanFormData.lender_name}
                     onChange={(e) => setLoanFormData({ ...loanFormData, lender_name: e.target.value })}
                     required
                     disabled={submitting}
+                    className="h-9 px-3 text-sm focus-visible:ring-primary"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Amount Borrowed</Label>
+                <div>
+                  <Label htmlFor="amount" className="text-sm font-medium text-slate-700 mb-1">Amount</Label>
                   <Input
                     id="amount"
                     type="number"
                     step="0.01"
-                    placeholder="e.g., 10000"
+                    placeholder="10000"
                     value={loanFormData.amount}
                     onChange={(e) => setLoanFormData({ ...loanFormData, amount: e.target.value })}
                     required
                     disabled={submitting}
+                    className="h-9 px-3 text-sm focus-visible:ring-primary"
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="due_date">Due Date (Optional)</Label>
-                  <Input
-                    id="due_date"
-                    type="date"
-                    value={loanFormData.due_date}
-                    onChange={(e) => setLoanFormData({ ...loanFormData, due_date: e.target.value })}
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description (Optional)</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="e.g., Emergency loan"
-                    value={loanFormData.description}
-                    onChange={(e) => setLoanFormData({ ...loanFormData, description: e.target.value })}
-                    disabled={submitting}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="is_funding_source_desktop"
-                    checked={loanFormData.is_funding_source}
-                    onCheckedChange={(checked) =>
-                      setLoanFormData({ ...loanFormData, is_funding_source: checked as boolean })
-                    }
-                    disabled={submitting}
-                  />
-                  <Label
-                    htmlFor="is_funding_source_desktop"
-                    className="text-sm font-normal cursor-pointer"
-                  >
-                    Use this loan as a Fund Source?
-                  </Label>
                 </div>
               </div>
 
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDialogOpen(false)}
+              {/* Row 2: Due Date */}
+              <div>
+                <Label htmlFor="due_date" className="text-sm font-medium text-slate-700 mb-1">Due Date (Optional)</Label>
+                <Input
+                  id="due_date"
+                  type="date"
+                  value={loanFormData.due_date}
+                  onChange={(e) => setLoanFormData({ ...loanFormData, due_date: e.target.value })}
                   disabled={submitting}
+                  className="h-9 px-3 text-sm focus-visible:ring-primary w-full"
+                />
+              </div>
+
+              {/* Row 3: Description */}
+              <div>
+                <Label htmlFor="description" className="text-sm font-medium text-slate-700 mb-1">Description (Optional)</Label>
+                <Textarea
+                  id="description"
+                  placeholder="e.g., Emergency loan"
+                  value={loanFormData.description}
+                  onChange={(e) => setLoanFormData({ ...loanFormData, description: e.target.value })}
+                  disabled={submitting}
+                  rows={2}
+                  className="text-sm focus-visible:ring-primary resize-none"
+                />
+              </div>
+
+              {/* Row 4: Checkbox */}
+              <div className="flex items-center space-x-2 pt-1">
+                <Checkbox
+                  id="is_funding_source"
+                  checked={loanFormData.is_funding_source}
+                  onCheckedChange={(checked) =>
+                    setLoanFormData({ ...loanFormData, is_funding_source: checked as boolean })
+                  }
+                  disabled={submitting}
+                />
+                <Label
+                  htmlFor="is_funding_source"
+                  className="text-sm font-normal cursor-pointer"
                 >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? (editMode ? 'Updating...' : 'Adding...') : (editMode ? 'Update Loan' : 'Add Loan')}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
+                  Use this loan as a Fund Source?
+                </Label>
+              </div>
+            </ResponsiveModalBody>
+
+            <ResponsiveModalFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setDialogOpen(false);
+                  setEditMode(false);
+                  setEditingId(null);
+                }}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? (editMode ? 'Updating...' : 'Adding...') : (editMode ? 'Update Loan' : 'Add Loan')}
+              </Button>
+            </ResponsiveModalFooter>
+          </form>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
 
       {/* Repayment Dialog/Drawer */}
-      {isMobile ? (
-        <Drawer open={repayDialogOpen} onOpenChange={setRepayDialogOpen}>
-          <DrawerContent>
-            <form onSubmit={handleRepaySubmit}>
-              <DrawerHeader>
-                <DrawerTitle>Make Repayment</DrawerTitle>
-                <DrawerDescription>
-                  Pay back {selectedLoan?.lender_name}
-                </DrawerDescription>
-              </DrawerHeader>
+      {/* Repayment Dialog */}
+      <ResponsiveModal open={repayDialogOpen} onOpenChange={setRepayDialogOpen}>
+        <ResponsiveModalContent>
+          <ResponsiveModalHeader>
+            <ResponsiveModalTitle>Make Repayment</ResponsiveModalTitle>
+            <ResponsiveModalDescription>
+              Pay back {selectedLoan?.lender_name}
+            </ResponsiveModalDescription>
+          </ResponsiveModalHeader>
 
-              <DrawerBody>
-                <div className="px-6 py-3 pb-40 space-y-4">
-                  {error && (
-                    <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                      {error}
-                    </div>
-                  )}
+          <form onSubmit={handleRepaySubmit} className="flex flex-col h-full">
+            <ResponsiveModalBody className="space-y-3">
+              {error && (
+                <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  {error}
+                </div>
+              )}
 
-                  {/* Balance Info */}
-                  {selectedLoan && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+              {/* Balance Info */}
+              {selectedLoan && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-blue-900">Remaining Balance</span>
+                    <span className="text-lg font-bold text-blue-600">
+                      {formatCurrency(selectedLoan.balance_remaining)}
+                    </span>
+                  </div>
+                  {repayFormData.amount && parseFloat(repayFormData.amount) > 0 && (
+                    <div className="pt-2 border-t border-blue-200">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-blue-900">Remaining Balance</span>
-                        <span className="text-xl font-bold text-blue-600">
-                          {formatCurrency(selectedLoan.balance_remaining)}
+                        <span className="text-sm text-blue-700">After Payment</span>
+                        <span className="text-base font-semibold text-green-600">
+                          {formatCurrency(selectedLoan.balance_remaining - parseFloat(repayFormData.amount))}
                         </span>
                       </div>
-                      {repayFormData.amount && parseFloat(repayFormData.amount) > 0 && (
-                        <div className="pt-2 border-t border-blue-200">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-blue-700">After Payment</span>
-                            <span className="text-lg font-semibold text-green-600">
-                              {formatCurrency(selectedLoan.balance_remaining - parseFloat(repayFormData.amount))}
-                            </span>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   )}
-
-                  <div className="space-y-1">
-                    <Label htmlFor="repay_amount" className="text-sm">Amount to Pay</Label>
-                    <Input
-                      id="repay_amount"
-                      type="number"
-                      step="0.01"
-                      placeholder="Enter amount"
-                      value={repayFormData.amount}
-                      onChange={(e) => setRepayFormData({ ...repayFormData, amount: e.target.value })}
-                      required
-                      disabled={submitting}
-                      className="min-h-[40px] text-sm"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="repay_category" className="text-sm">Category</Label>
-                    <select
-                      id="repay_category"
-                      value={repayFormData.category_id}
-                      onChange={(e) => setRepayFormData({ ...repayFormData, category_id: e.target.value })}
-                      required
-                      disabled={submitting}
-                      className="w-full min-h-[40px] px-3 border border-slate-300 rounded-md text-sm"
-                    >
-                      <option value="">Select category</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm">Payment Source</Label>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant={paymentMethod === 'bank' ? 'default' : 'outline'}
-                        onClick={() => setPaymentMethod('bank')}
-                        className="flex-1 min-h-[40px]"
-                        disabled={submitting}
-                      >
-                        Bank Account
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={paymentMethod === 'fund' ? 'default' : 'outline'}
-                        onClick={() => setPaymentMethod('fund')}
-                        className="flex-1 min-h-[40px]"
-                        disabled={submitting}
-                      >
-                        Cash Wallet
-                      </Button>
-                    </div>
-                  </div>
-
-                  {paymentMethod === 'bank' ? (
-                    <div className="space-y-1">
-                      <Label htmlFor="bank_account" className="text-sm">Bank Account</Label>
-                      <select
-                        id="bank_account"
-                        value={repayFormData.bank_account_id}
-                        onChange={(e) => setRepayFormData({ ...repayFormData, bank_account_id: e.target.value })}
-                        required
-                        disabled={submitting}
-                        className="w-full min-h-[40px] px-3 border border-slate-300 rounded-md text-sm"
-                      >
-                        <option value="">Select bank account</option>
-                        {bankAccounts.map((account) => (
-                          <option key={account.id} value={account.id}>
-                            {account.bank_name} - {formatCurrency(account.balance)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      <Label htmlFor="fund_source" className="text-sm">Cash Wallet</Label>
-                      <select
-                        id="fund_source"
-                        value={repayFormData.fund_source_id}
-                        onChange={(e) => setRepayFormData({ ...repayFormData, fund_source_id: e.target.value })}
-                        required
-                        disabled={submitting}
-                        className="w-full min-h-[40px] px-3 border border-slate-300 rounded-md text-sm"
-                      >
-                        <option value="">Select cash wallet</option>
-                        {fundSources.map((source) => (
-                          <option key={source.id} value={source.id}>
-                            {source.source_name} - {formatCurrency(source.amount)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  <div className="space-y-1">
-                    <Label htmlFor="repay_date" className="text-sm">Payment Date</Label>
-                    <Input
-                      id="repay_date"
-                      type="date"
-                      value={repayFormData.date}
-                      onChange={(e) => setRepayFormData({ ...repayFormData, date: e.target.value })}
-                      required
-                      disabled={submitting}
-                      className="min-h-[40px] text-sm"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="repay_description" className="text-sm">Description (Optional)</Label>
-                    <Textarea
-                      id="repay_description"
-                      placeholder="Payment note"
-                      value={repayFormData.description}
-                      onChange={(e) => setRepayFormData({ ...repayFormData, description: e.target.value })}
-                      disabled={submitting}
-                      rows={2}
-                      className="text-sm"
-                    />
-                  </div>
                 </div>
-              </DrawerBody>
+              )}
 
-              <DrawerFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setRepayDialogOpen(false)}
-                  disabled={submitting}
-                  className="min-h-[50px] w-full sm:w-auto text-base sm:text-sm font-semibold"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={submitting} className="min-h-[50px] w-full sm:w-auto text-base sm:text-sm font-semibold">
-                  {submitting ? 'Processing...' : 'Make Payment'}
-                </Button>
-              </DrawerFooter>
-            </form>
-          </DrawerContent>
-        </Drawer>
-      ) : (
-        <Dialog open={repayDialogOpen} onOpenChange={setRepayDialogOpen}>
-          <DialogContent>
-            <form onSubmit={handleRepaySubmit}>
-              <DialogHeader>
-                <DialogTitle>Make Repayment</DialogTitle>
-                <DialogDescription>
-                  Pay back {selectedLoan?.lender_name}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="px-6 py-4 space-y-4">
-                {error && (
-                  <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                    {error}
-                  </div>
-                )}
-
-                {/* Balance Info */}
-                {selectedLoan && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-blue-900">Remaining Balance</span>
-                      <span className="text-xl font-bold text-blue-600">
-                        {formatCurrency(selectedLoan.balance_remaining)}
-                      </span>
-                    </div>
-                    {repayFormData.amount && parseFloat(repayFormData.amount) > 0 && (
-                      <div className="pt-2 border-t border-blue-200">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-blue-700">After Payment</span>
-                          <span className="text-lg font-semibold text-green-600">
-                            {formatCurrency(selectedLoan.balance_remaining - parseFloat(repayFormData.amount))}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="repay_amount_desktop">Amount to Pay</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="repay_amount" className="text-sm font-medium text-slate-700 mb-1">Amount</Label>
                   <Input
-                    id="repay_amount_desktop"
+                    id="repay_amount"
                     type="number"
                     step="0.01"
                     placeholder="Enter amount"
@@ -878,18 +593,19 @@ export default function LoansPage() {
                     onChange={(e) => setRepayFormData({ ...repayFormData, amount: e.target.value })}
                     required
                     disabled={submitting}
+                    className="h-9 px-3 text-sm focus-visible:ring-primary"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="repay_category_desktop">Category</Label>
+                <div>
+                  <Label htmlFor="repay_category" className="text-sm font-medium text-slate-700 mb-1">Category</Label>
                   <select
-                    id="repay_category_desktop"
+                    id="repay_category"
                     value={repayFormData.category_id}
                     onChange={(e) => setRepayFormData({ ...repayFormData, category_id: e.target.value })}
                     required
                     disabled={submitting}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md"
+                    className="w-full h-9 px-3 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="">Select category</option>
                     {categories.map((category) => (
@@ -899,113 +615,115 @@ export default function LoansPage() {
                     ))}
                   </select>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label>Payment Source</Label>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant={paymentMethod === 'bank' ? 'default' : 'outline'}
-                      onClick={() => setPaymentMethod('bank')}
-                      className="flex-1"
-                      disabled={submitting}
-                    >
-                      Bank Account
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={paymentMethod === 'fund' ? 'default' : 'outline'}
-                      onClick={() => setPaymentMethod('fund')}
-                      className="flex-1"
-                      disabled={submitting}
-                    >
-                      Cash Wallet
-                    </Button>
-                  </div>
-                </div>
-
-                {paymentMethod === 'bank' ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="bank_account_desktop">Bank Account</Label>
-                    <select
-                      id="bank_account_desktop"
-                      value={repayFormData.bank_account_id}
-                      onChange={(e) => setRepayFormData({ ...repayFormData, bank_account_id: e.target.value })}
-                      required
-                      disabled={submitting}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md"
-                    >
-                      <option value="">Select bank account</option>
-                      {bankAccounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.bank_name} - {formatCurrency(account.balance)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Label htmlFor="fund_source_desktop">Cash Wallet</Label>
-                    <select
-                      id="fund_source_desktop"
-                      value={repayFormData.fund_source_id}
-                      onChange={(e) => setRepayFormData({ ...repayFormData, fund_source_id: e.target.value })}
-                      required
-                      disabled={submitting}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md"
-                    >
-                      <option value="">Select fund source</option>
-                      {fundSources.map((source) => (
-                        <option key={source.id} value={source.id}>
-                          {source.source_name} - {formatCurrency(source.amount)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="repay_date_desktop">Payment Date</Label>
-                  <Input
-                    id="repay_date_desktop"
-                    type="date"
-                    value={repayFormData.date}
-                    onChange={(e) => setRepayFormData({ ...repayFormData, date: e.target.value })}
-                    required
+              <div>
+                <Label className="text-sm font-medium text-slate-700 mb-1">Payment Source</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={paymentMethod === 'bank' ? 'default' : 'outline'}
+                    onClick={() => setPaymentMethod('bank')}
+                    className="flex-1 h-9"
                     disabled={submitting}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="repay_description_desktop">Description (Optional)</Label>
-                  <Textarea
-                    id="repay_description_desktop"
-                    placeholder="Payment note"
-                    value={repayFormData.description}
-                    onChange={(e) => setRepayFormData({ ...repayFormData, description: e.target.value })}
+                  >
+                    Bank Account
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={paymentMethod === 'fund' ? 'default' : 'outline'}
+                    onClick={() => setPaymentMethod('fund')}
+                    className="flex-1 h-9"
                     disabled={submitting}
-                    rows={3}
-                  />
+                  >
+                    Cash Wallet
+                  </Button>
                 </div>
               </div>
 
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setRepayDialogOpen(false)}
+              {paymentMethod === 'bank' ? (
+                <div>
+                  <Label htmlFor="bank_account" className="text-sm font-medium text-slate-700 mb-1">Bank Account</Label>
+                  <select
+                    id="bank_account"
+                    value={repayFormData.bank_account_id}
+                    onChange={(e) => setRepayFormData({ ...repayFormData, bank_account_id: e.target.value })}
+                    required
+                    disabled={submitting}
+                    className="w-full h-9 px-3 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">Select bank account</option>
+                    {bankAccounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.bank_name} - {formatCurrency(account.balance)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <Label htmlFor="fund_source" className="text-sm font-medium text-slate-700 mb-1">Cash Wallet</Label>
+                  <select
+                    id="fund_source"
+                    value={repayFormData.fund_source_id}
+                    onChange={(e) => setRepayFormData({ ...repayFormData, fund_source_id: e.target.value })}
+                    required
+                    disabled={submitting}
+                    className="w-full h-9 px-3 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">Select cash wallet</option>
+                    {fundSources.map((source) => (
+                      <option key={source.id} value={source.id}>
+                        {source.source_name} - {formatCurrency(source.amount)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="repay_date" className="text-sm font-medium text-slate-700 mb-1">Payment Date</Label>
+                <Input
+                  id="repay_date"
+                  type="date"
+                  value={repayFormData.date}
+                  onChange={(e) => setRepayFormData({ ...repayFormData, date: e.target.value })}
+                  required
                   disabled={submitting}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? 'Processing...' : 'Make Payment'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
+                  className="h-9 px-3 text-sm focus-visible:ring-primary w-full"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="repay_description" className="text-sm font-medium text-slate-700 mb-1">Description (Optional)</Label>
+                <Textarea
+                  id="repay_description"
+                  placeholder="Payment note"
+                  value={repayFormData.description}
+                  onChange={(e) => setRepayFormData({ ...repayFormData, description: e.target.value })}
+                  disabled={submitting}
+                  rows={2}
+                  className="text-sm focus-visible:ring-primary resize-none"
+                />
+              </div>
+            </ResponsiveModalBody>
+
+            <ResponsiveModalFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRepayDialogOpen(false)}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? 'Processing...' : 'Make Payment'}
+              </Button>
+            </ResponsiveModalFooter>
+          </form>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
     </div>
   );
 }

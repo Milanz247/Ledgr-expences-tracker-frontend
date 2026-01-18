@@ -1,0 +1,13 @@
+# Run these commands in your terminal to install the required packages
+
+# Navigate to frontend directory
+cd c:\Users\milan_m\Desktop\Lgder\frontend
+
+# Install the required packages
+npm install input-otp framer-motion
+
+# If you get PowerShell execution policy errors, run this first:
+# Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+# Then restart the dev server
+npm run dev

@@ -182,7 +182,7 @@ export function ResponsiveModalBody({
   }
 
   return (
-    <DrawerBody className={cn('pb-safe', className)}>{children}</DrawerBody>
+    <DrawerBody className={cn('pb-safe overflow-y-auto', className)}>{children}</DrawerBody>
   );
 }
 

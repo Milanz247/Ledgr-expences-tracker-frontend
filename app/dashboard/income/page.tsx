@@ -40,6 +40,7 @@ import {
   ChevronRight,
   Loader2,
   SlidersHorizontal,
+  Check,
 } from 'lucide-react';
 import { getIconComponent } from '@/lib/categoryIcons';
 import { format } from 'date-fns';
@@ -166,19 +167,26 @@ export default function IncomePage() {
     router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
   }, [searchParams, router, pathname]);
 
-  // Fetch incomes with filters
-  const fetchIncomes = useCallback(async (page = 1) => {
+  // Fetch incomes with filters from URL
+  const fetchIncomes = useCallback(async () => {
     setTableLoading(true);
     try {
       const params = new URLSearchParams();
-      params.set('page', page.toString());
+      const page = searchParams.get('page') || '1';
+      params.set('page', page);
       params.set('per_page', '15');
 
-      if (searchQuery) params.set('search', searchQuery);
-      if (selectedCategory) params.set('category_id', selectedCategory);
-      if (selectedSourceType) params.set('source_type', selectedSourceType);
-      if (startDate) params.set('start_date', startDate);
-      if (endDate) params.set('end_date', endDate);
+      const search = searchParams.get('search');
+      const category = searchParams.get('category_id');
+      const source = searchParams.get('source_type');
+      const start = searchParams.get('start_date');
+      const end = searchParams.get('end_date');
+
+      if (search) params.set('search', search);
+      if (category) params.set('category_id', category);
+      if (source) params.set('source_type', source);
+      if (start) params.set('start_date', start);
+      if (end) params.set('end_date', end);
 
       const response = await api.get(`/incomes?${params.toString()}`);
 
@@ -202,7 +210,7 @@ export default function IncomePage() {
       setTableLoading(false);
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory, selectedSourceType, startDate, endDate]);
+  }, [searchParams]);
 
   // Fetch initial data
   useEffect(() => {
@@ -232,17 +240,19 @@ export default function IncomePage() {
 
   // Fetch incomes when filters change
   useEffect(() => {
-    fetchIncomes(pagination.current_page);
+    fetchIncomes();
   }, [fetchIncomes]);
 
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchQuery !== searchParams.get('search')) {
-        updateUrlParams({ search: searchQuery, page: '1' });
-        fetchIncomes(1);
+      // Search if empty (clear) or at least 2 chars
+      if (searchQuery.length === 0 || searchQuery.length >= 2) {
+        if (searchQuery !== searchParams.get('search')) {
+          updateUrlParams({ search: searchQuery, page: '1' });
+        }
       }
-    }, 300);
+    }, 800); // 800ms delay
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
@@ -273,12 +283,30 @@ export default function IncomePage() {
     setStartDate('');
     setEndDate('');
     router.push(pathname, { scroll: false });
-    fetchIncomes(1);
   };
 
   const handlePageChange = (page: number) => {
     updateUrlParams({ page: page.toString() });
-    fetchIncomes(page);
+  };
+
+  const editingIncome = incomes.find(i => i.id === editingId);
+  const userCurrency = { symbol: 'Rs', code: 'LKR' };
+
+  const handleCloseDialog = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setEditMode(false);
+      setEditingId(null);
+      setFormData({
+        amount: '',
+        category_id: '',
+        bank_account_id: '',
+        fund_source_id: '',
+        date: new Date().toISOString().split('T')[0],
+        description: '',
+      });
+      setError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -308,7 +336,7 @@ export default function IncomePage() {
         toast.success('Income added successfully');
       }
 
-      await fetchIncomes(pagination.current_page);
+      await fetchIncomes();
       setDialogOpen(false);
       resetForm();
     } catch (err: any) {
@@ -369,7 +397,7 @@ export default function IncomePage() {
     try {
       await api.delete(`/incomes/${id}`);
       toast.success('Income deleted successfully');
-      await fetchIncomes(pagination.current_page);
+      await fetchIncomes();
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Failed to delete income';
       toast.error(errorMessage);
@@ -387,111 +415,7 @@ export default function IncomePage() {
     return incomes.reduce((sum, income) => sum + Number.parseFloat(income.amount.toString()), 0);
   };
 
-  // Filter Bar Component
-  const FilterBar = () => (
-    <div className="flex flex-col gap-3">
-      {/* Desktop Filter Bar */}
-      <div className="hidden lg:flex items-center gap-3 p-3 bg-zinc-50/50 rounded-xl border border-zinc-200/60">
-        {/* Search Input */}
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-          <Input
-            placeholder="Search incomes..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 bg-white border-zinc-200/60"
-          />
-        </div>
 
-        {/* Category Filter */}
-        <Select value={selectedCategory || 'all'} onValueChange={(v) => handleFilterChange('category_id', v)}>
-          <SelectTrigger className="w-[160px] h-9 bg-white border-zinc-200/60">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.id.toString()}>
-                {cat.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Source Type Filter */}
-        <Select value={selectedSourceType || 'all'} onValueChange={(v) => handleFilterChange('source_type', v)}>
-          <SelectTrigger className="w-[140px] h-9 bg-white border-zinc-200/60">
-            <SelectValue placeholder="Destination" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Destinations</SelectItem>
-            <SelectItem value="bank">Bank Account</SelectItem>
-            <SelectItem value="fund">Cash/Wallet</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Date Range */}
-        <div className="flex items-center gap-2">
-          <Input
-            type="date"
-            value={startDate}
-            onChange={(e) => handleFilterChange('start_date', e.target.value)}
-            className="h-9 w-[130px] bg-white border-zinc-200/60"
-          />
-          <span className="text-zinc-400">to</span>
-          <Input
-            type="date"
-            value={endDate}
-            onChange={(e) => handleFilterChange('end_date', e.target.value)}
-            className="h-9 w-[130px] bg-white border-zinc-200/60"
-          />
-        </div>
-
-        {/* Clear Filters */}
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearFilters}
-            className="h-9 px-3 text-zinc-500 hover:text-zinc-900"
-          >
-            <X className="h-4 w-4 mr-1" />
-            Clear
-          </Button>
-        )}
-
-        {/* Loading indicator */}
-        {tableLoading && (
-          <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
-        )}
-      </div>
-
-      {/* Mobile Filter Bar */}
-      <div className="lg:hidden flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-          <Input
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-10 bg-white border-zinc-200/60"
-          />
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setFilterDrawerOpen(true)}
-          className={cn(
-            'h-10 px-3 border-zinc-200/60',
-            hasActiveFilters && 'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-800'
-          )}
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          {hasActiveFilters && <span className="ml-1.5 text-xs">{[selectedCategory, selectedSourceType, startDate].filter(Boolean).length}</span>}
-        </Button>
-      </div>
-    </div>
-  );
 
   // Pagination Component
   const PaginationControls = () => (
@@ -548,167 +472,6 @@ export default function IncomePage() {
     </div>
   );
 
-  // Form Component
-  const IncomeForm = () => (
-    <form onSubmit={handleSubmit} className="flex flex-col h-full">
-      <ResponsiveModalBody className="space-y-4">
-        {error && (
-          <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-sm border border-rose-200/60">
-            {error}
-          </div>
-        )}
-
-        {/* Category */}
-        <div className="space-y-1.5">
-          <Label className="text-sm font-medium text-zinc-700">Category</Label>
-          <Select
-            value={formData.category_id}
-            onValueChange={(v) => setFormData({ ...formData, category_id: v })}
-          >
-            <SelectTrigger className="h-11 bg-zinc-50/50 border-zinc-200/60">
-              <SelectValue placeholder="Select income category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => {
-                const IconComponent = getIconComponent(category.icon);
-                return (
-                  <SelectItem key={category.id} value={category.id.toString()}>
-                    <div className="flex items-center gap-2">
-                      <IconComponent className="h-4 w-4" />
-                      {category.name}
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Destination */}
-        <div className="space-y-1.5">
-          <Label className="text-sm font-medium text-zinc-700">Destination</Label>
-          <Tabs value={destinationType} onValueChange={(v) => setDestinationType(v as 'bank' | 'fund')}>
-            <TabsList className="w-full grid grid-cols-2 h-11 bg-zinc-100/80">
-              <TabsTrigger value="bank" className="data-[state=active]:bg-white">
-                <Landmark className="h-4 w-4 mr-1.5" />
-                Bank Account
-              </TabsTrigger>
-              <TabsTrigger value="fund" className="data-[state=active]:bg-white">
-                <Wallet className="h-4 w-4 mr-1.5" />
-                Cash Wallet
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="bank" className="mt-3">
-              <Select
-                value={formData.bank_account_id}
-                onValueChange={(v) => setFormData({ ...formData, bank_account_id: v })}
-              >
-                <SelectTrigger className="h-11 bg-zinc-50/50 border-zinc-200/60">
-                  <SelectValue placeholder="Select bank account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {bankAccounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id.toString()}>
-                      {account.bank_name} - {formatCurrency(account.balance)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </TabsContent>
-
-            <TabsContent value="fund" className="mt-3">
-              <Select
-                value={formData.fund_source_id}
-                onValueChange={(v) => setFormData({ ...formData, fund_source_id: v })}
-              >
-                <SelectTrigger className="h-11 bg-zinc-50/50 border-zinc-200/60">
-                  <SelectValue placeholder="Select cash wallet" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fundSources.map((source) => (
-                    <SelectItem key={source.id} value={source.id.toString()}>
-                      {source.source_name} - {formatCurrency(source.amount)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        {/* Amount & Date Row */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium text-zinc-700">Amount</Label>
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              required
-              disabled={submitting}
-              className="h-11 bg-zinc-50/50 border-zinc-200/60 text-lg font-semibold"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium text-zinc-700">Date</Label>
-            <Input
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              required
-              disabled={submitting}
-              className="h-11 bg-zinc-50/50 border-zinc-200/60"
-            />
-          </div>
-        </div>
-
-        {/* Description */}
-        <div className="space-y-1.5">
-          <Label className="text-sm font-medium text-zinc-700">Description (Optional)</Label>
-          <Textarea
-            placeholder="e.g., Monthly salary"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            disabled={submitting}
-            rows={2}
-            className="bg-zinc-50/50 border-zinc-200/60 resize-none"
-          />
-        </div>
-      </ResponsiveModalBody>
-
-      <ResponsiveModalFooter className="border-t border-zinc-200/60 bg-zinc-50/50">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            setDialogOpen(false);
-            resetForm();
-          }}
-          disabled={submitting}
-          className="flex-1 lg:flex-none h-12 lg:h-10"
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          disabled={submitting}
-          className="flex-1 lg:flex-none h-12 lg:h-10 bg-emerald-600 hover:bg-emerald-700"
-        >
-          {submitting ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              {editMode ? 'Updating...' : 'Adding...'}
-            </>
-          ) : (
-            editMode ? 'Update Income' : 'Add Income'
-          )}
-        </Button>
-      </ResponsiveModalFooter>
-    </form>
-  );
 
   if (loading) {
     return (
@@ -737,24 +500,125 @@ export default function IncomePage() {
 
       {/* Total Income Card */}
       <Card className="border-emerald-200/60 bg-gradient-to-br from-emerald-50/80 to-emerald-100/40">
-        <CardContent className="p-5">
+        <CardContent className="p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-emerald-600">Total Income</p>
-              <p className="text-3xl font-bold text-emerald-700 mt-1">{formatCurrency(getTotalIncome())}</p>
-              <p className="text-xs text-emerald-600/80 mt-1">
+              <p className="text-xs sm:text-sm font-medium text-emerald-600">Total Income</p>
+              <p className="text-2xl sm:text-3xl font-bold text-emerald-700 mt-1">{formatCurrency(getTotalIncome())}</p>
+              <p className="text-[10px] sm:text-xs text-emerald-600/80 mt-1">
                 {pagination.total} {pagination.total === 1 ? 'transaction' : 'transactions'}
               </p>
             </div>
-            <div className="h-14 w-14 rounded-2xl bg-emerald-100 flex items-center justify-center">
-              <TrendingUp className="h-7 w-7 text-emerald-600" />
+            <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-emerald-100 flex items-center justify-center">
+              <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 text-emerald-600" />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Filter Bar */}
-      <FilterBar />
+      {/* Filter Bar Inline */}
+      <div className="flex flex-col gap-3">
+        {/* Desktop Filter Bar */}
+        <div className="hidden lg:flex items-center gap-3 p-3 bg-zinc-50/50 rounded-xl border border-zinc-200/60">
+          {/* Search Input */}
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+            <Input
+              placeholder="Search incomes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9 bg-white border-zinc-200/60"
+            />
+          </div>
+
+          {/* Category Filter */}
+          <Select value={selectedCategory || 'all'} onValueChange={(v) => handleFilterChange('category_id', v)}>
+            <SelectTrigger className="w-[160px] h-9 bg-white border-zinc-200/60">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id.toString()}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Source Type Filter */}
+          <Select value={selectedSourceType || 'all'} onValueChange={(v) => handleFilterChange('source_type', v)}>
+            <SelectTrigger className="w-[140px] h-9 bg-white border-zinc-200/60">
+              <SelectValue placeholder="Destination" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Destinations</SelectItem>
+              <SelectItem value="bank">Bank Account</SelectItem>
+              <SelectItem value="fund">Cash/Wallet</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Date Range */}
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => handleFilterChange('start_date', e.target.value)}
+              className="h-9 w-[130px] bg-white border-zinc-200/60"
+            />
+            <span className="text-zinc-400">to</span>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => handleFilterChange('end_date', e.target.value)}
+              className="h-9 w-[130px] bg-white border-zinc-200/60"
+            />
+          </div>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-9 px-3 text-zinc-500 hover:text-zinc-900"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Clear
+            </Button>
+          )}
+
+          {/* Loading indicator */}
+          {tableLoading && (
+            <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+          )}
+        </div>
+
+        {/* Mobile Filter Bar */}
+        <div className="lg:hidden flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+            <Input
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-10 bg-white border-zinc-200/60"
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFilterDrawerOpen(true)}
+            className={cn(
+              'h-10 px-3 border-zinc-200/60',
+              hasActiveFilters && 'border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-800'
+            )}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            {hasActiveFilters && <span className="ml-1.5 text-xs">{[selectedCategory, selectedSourceType, startDate].filter(Boolean).length}</span>}
+          </Button>
+        </div>
+      </div>
 
       {/* Content */}
       {incomes.length === 0 && !hasActiveFilters ? (
@@ -778,7 +642,9 @@ export default function IncomePage() {
               <Search className="h-8 w-8 text-zinc-400" />
             </div>
             <p className="text-lg font-semibold text-zinc-900 mb-1">No results found</p>
-            <p className="text-zinc-500 mb-6 text-center">Try adjusting your filters</p>
+            <p className="text-zinc-500 mb-6 text-center">
+              {searchQuery ? `No results for "${searchQuery}"` : 'Try adjusting your filters'}
+            </p>
             <Button variant="outline" onClick={clearFilters}>
               Clear Filters
             </Button>
@@ -796,30 +662,30 @@ export default function IncomePage() {
                   className="border-zinc-200/60 bg-white/80 hover:bg-zinc-50/50 transition-colors"
                 >
                   <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <div
-                        className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                        className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl flex items-center justify-center shrink-0"
                         style={{ backgroundColor: income.category.color }}
                       >
-                        <IconComponent className="h-5 w-5 text-white" />
+                        <IconComponent className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="font-medium text-zinc-900 truncate">{income.category.name}</p>
-                          <p className="font-bold text-emerald-600 shrink-0">+{formatCurrency(income.amount)}</p>
+                          <p className="font-medium text-zinc-900 truncate text-sm sm:text-base">{income.category.name}</p>
+                          <p className="font-bold text-emerald-600 shrink-0 text-sm sm:text-base">+{formatCurrency(income.amount)}</p>
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-xs text-zinc-500 truncate">{income.description || 'No description'}</p>
-                          <span className="text-zinc-300">•</span>
-                          <p className="text-xs text-zinc-500 shrink-0">{format(new Date(income.date), 'MMM dd')}</p>
+                          <p className="text-[10px] sm:text-xs text-zinc-500 truncate">{income.description || 'No description'}</p>
+                          <span className="text-zinc-300 transform scale-75">•</span>
+                          <p className="text-[10px] sm:text-xs text-zinc-500 shrink-0">{format(new Date(income.date), 'MMM dd')}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(income)} className="h-8 w-8 p-0">
-                          <Edit className="h-4 w-4 text-zinc-400" />
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(income)} className="h-7 w-7 sm:h-8 sm:w-8 p-0">
+                          <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-zinc-400" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(income.id)} className="h-8 w-8 p-0">
-                          <Trash2 className="h-4 w-4 text-rose-400" />
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(income.id)} className="h-7 w-7 sm:h-8 sm:w-8 p-0">
+                          <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-rose-400" />
                         </Button>
                       </div>
                     </div>
@@ -915,18 +781,125 @@ export default function IncomePage() {
       )}
 
       {/* Add/Edit Modal */}
-      <ResponsiveModal open={dialogOpen} onOpenChange={(open) => {
-        if (!open) resetForm();
-        setDialogOpen(open);
-      }}>
+      <ResponsiveModal open={dialogOpen} onOpenChange={handleCloseDialog}>
         <ResponsiveModalContent>
           <ResponsiveModalHeader>
-            <ResponsiveModalTitle>{editMode ? 'Edit' : 'Add'} Income</ResponsiveModalTitle>
+            <ResponsiveModalTitle>{editingIncome ? 'Edit Income' : 'Add New Income'}</ResponsiveModalTitle>
             <ResponsiveModalDescription>
-              {editMode ? 'Update your income record' : 'Record money added to your accounts'}
+              {editingIncome ? 'Make changes to your income here.' : 'Add a new income source to track your earnings.'}
             </ResponsiveModalDescription>
           </ResponsiveModalHeader>
-          <IncomeForm />
+          <form onSubmit={handleSubmit} className="flex flex-col h-full">
+            <ResponsiveModalBody className="space-y-4">
+              {error && (
+                <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-sm border border-rose-200/60">
+                  {error}
+                </div>
+              )}
+
+              {/* Amount Input */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-zinc-700">Amount</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 font-medium">
+                    {userCurrency?.symbol}
+                  </span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                    required
+                    disabled={submitting}
+                    className="pl-8 h-11 bg-zinc-50/50 border-zinc-200/60 text-lg font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Category Selection */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-zinc-700">Category</Label>
+                <Select
+                  value={formData.category_id}
+                  onValueChange={(v) => setFormData({ ...formData, category_id: v })}
+                  disabled={submitting}
+                >
+                  <SelectTrigger className="h-11 bg-zinc-50/50 border-zinc-200/60">
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories
+                      .filter((c) => c.type === 'income')
+                      .map((category) => {
+                        const IconComponent = getIconComponent(category.icon);
+                        return (
+                          <SelectItem key={category.id} value={category.id.toString()}>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-6 h-6 rounded-md flex items-center justify-center text-white shrink-0"
+                                style={{ backgroundColor: category.color }}
+                              >
+                                <IconComponent className="h-4 w-4" />
+                              </div>
+                              <span>{category.name}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-zinc-700">Date</Label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  required
+                  disabled={submitting}
+                  className="h-11 bg-zinc-50/50 border-zinc-200/60"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-zinc-700">Description (Optional)</Label>
+                <Textarea
+                  placeholder="Where did this income come from?"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  disabled={submitting}
+                  className="min-h-[80px] bg-zinc-50/50 border-zinc-200/60 resize-none"
+                />
+              </div>
+            </ResponsiveModalBody>
+
+            <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6 w-full shrink-0">
+              <Button type="button" variant="outline" onClick={() => handleCloseDialog(false)} className="h-11 w-full sm:flex-1 text-base rounded-xl border-zinc-200/60 hover:bg-zinc-100 hover:text-zinc-900 order-2 sm:order-1">
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={submitting} 
+                className="h-11 w-full sm:flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-base rounded-xl shadow-lg shadow-emerald-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] order-1 sm:order-2"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="mr-2 h-5 w-5" />
+                    {editingIncome ? 'Update Income' : 'Save Income'}
+                  </>
+                )}
+              </Button>
+            </ResponsiveModalFooter>
+          </form>
         </ResponsiveModalContent>
       </ResponsiveModal>
 
