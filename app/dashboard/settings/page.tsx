@@ -31,7 +31,16 @@ import {
   Send,
   Loader2,
   Check,
+
   X,
+  LayoutDashboard,
+  Wallet,
+  ArrowDownUp,
+  Landmark,
+  CreditCard,
+  FileBarChart,
+  PiggyBank,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -98,6 +107,51 @@ export default function SettingsPage() {
     frequency: 'weekly' as 'daily' | 'weekly' | 'monthly',
     is_enabled: false,
   });
+  
+  // Sidebar settings handler
+  const handleSidebarToggle = async (key: string, value: boolean) => {
+      if (!user) return;
+      
+      const newSettings = { ...user.sidebar_settings, [key]: value };
+      
+      // Optimistic update
+      updateUser({ ...user, sidebar_settings: newSettings });
+
+      try {
+          await api.put('/profile/sidebar-settings', {
+              settings: { [key]: value }
+          });
+          toast.success('Navigation updated');
+      } catch (error) {
+          toast.error('Failed to update navigation');
+          // Revert on failure gets complex with just context, sticking to simple error toast for now
+      }
+  };
+
+  const handleRestoreDefaults = async () => {
+    const defaults = {
+        dashboard: true,
+        expenses: true,
+        incomes: true,
+        budgets: true,
+        recurring: true,
+        loans: true,
+        bank_accounts: true,
+        fund_sources: true,
+        installments: true,
+        categories: true,
+        reports: true,
+    };
+    
+    updateUser({ ...user!, sidebar_settings: defaults });
+    
+    try {
+        await api.put('/profile/sidebar-settings', { settings: defaults });
+        toast.success('Defaults restored');
+    } catch {
+        toast.error('Failed to restore defaults');
+    }
+  };
 
   // Profile form
   const profileForm = useForm<ProfileFormData>({
@@ -327,7 +381,7 @@ export default function SettingsPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">Profile</span>
@@ -336,11 +390,65 @@ export default function SettingsPage() {
             <Lock className="h-4 w-4" />
             <span className="hidden sm:inline">Security</span>
           </TabsTrigger>
+          <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <LayoutDashboard className="h-4 w-4" />
+            <span className="hidden sm:inline">Appearance</span>
+          </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             <span className="hidden sm:inline">Email Reports</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Appearance Tab */}
+        <TabsContent value="appearance" className="space-y-6 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Customize Navigation</CardTitle>
+              <CardDescription>
+                Choose which features you want to see in your sidebar.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+               <div className="grid gap-6">
+                 {[
+                   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+                   { id: 'expenses', label: 'Expenses', icon: Wallet },
+                   { id: 'incomes', label: 'Incomes', icon: ArrowDownUp },
+                   { id: 'budgets', label: 'Budgets', icon: PiggyBank }, // Added
+                   { id: 'recurring', label: 'Recurring', icon: RefreshCw }, // Added
+                   { id: 'loans', label: 'Loans', icon: Landmark },
+                   { id: 'bank_accounts', label: 'Bank Accounts', icon: Landmark }, // Added
+                   { id: 'fund_sources', label: 'Cash & Wallets', icon: Wallet }, // Added
+                   { id: 'installments', label: 'Installments', icon: CreditCard },
+                   { id: 'categories', label: 'Categories', icon: LayoutDashboard }, // Added, checked icon import below
+                   { id: 'reports', label: 'Reports', icon: FileBarChart },
+                 ].map((item) => (
+                   <div key={item.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                     <div className="flex items-center gap-3">
+                       <div className="p-2 bg-zinc-100 rounded-md">
+                         <item.icon className="h-5 w-5 text-zinc-600" />
+                       </div>
+                       <div>
+                         <p className="font-medium">{item.label}</p>
+                       </div>
+                     </div>
+                     <Switch 
+                        checked={user?.sidebar_settings?.[item.id] ?? true}
+                        onCheckedChange={(checked) => handleSidebarToggle(item.id, checked)}
+                     />
+                   </div>
+                 ))}
+                 
+                 <div className="flex justify-end pt-4">
+                    <Button variant="outline" onClick={handleRestoreDefaults}>
+                        Restore Defaults
+                    </Button>
+                 </div>
+               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Profile Tab */}
         <TabsContent value="profile" className="space-y-6 mt-6">

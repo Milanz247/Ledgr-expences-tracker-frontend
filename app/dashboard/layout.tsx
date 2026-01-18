@@ -34,16 +34,17 @@ import { useStealthMode } from '@/contexts/StealthModeContext';
 import NotificationCenter from '@/components/NotificationCenter';
 
 const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-  { icon: Receipt, label: 'Expenses', href: '/dashboard/expenses' },
-  { icon: TrendingUp, label: 'Income', href: '/dashboard/income' },
-  { icon: PiggyBank, label: 'Budgets', href: '/dashboard/budgets' },
-  { icon: RefreshCw, label: 'Recurring', href: '/dashboard/recurring' },
-  { icon: CreditCard, label: 'Loans', href: '/dashboard/loans' },
-  { icon: Landmark, label: 'Bank Accounts', href: '/dashboard/bank-accounts' },
-  { icon: Wallet, label: 'Cash & Wallets', href: '/dashboard/fund-sources' },
-  { icon: Calendar, label: 'Installments', href: '/dashboard/installments' },
-  { icon: Tag, label: 'Categories', href: '/dashboard/categories' },
+  { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+  { id: 'expenses', icon: Receipt, label: 'Expenses', href: '/dashboard/expenses' },
+  { id: 'incomes', icon: TrendingUp, label: 'Income', href: '/dashboard/income' },
+  { id: 'budgets', icon: PiggyBank, label: 'Budgets', href: '/dashboard/budgets' },
+  { id: 'recurring', icon: RefreshCw, label: 'Recurring', href: '/dashboard/recurring' },
+  { id: 'loans', icon: CreditCard, label: 'Loans', href: '/dashboard/loans' },
+  { id: 'bank_accounts', icon: Landmark, label: 'Bank Accounts', href: '/dashboard/bank-accounts' },
+  { id: 'fund_sources', icon: Wallet, label: 'Cash & Wallets', href: '/dashboard/fund-sources' },
+  { id: 'installments', icon: Calendar, label: 'Installments', href: '/dashboard/installments' },
+  { id: 'categories', icon: Tag, label: 'Categories', href: '/dashboard/categories' },
+  { id: 'reports', icon: Calendar, label: 'Reports', href: '/dashboard/reports' }, // Added for consistency with settings
 ];
 
 // Get user initials for avatar fallback
@@ -109,7 +110,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Navigation */}
             <nav className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
-              {menuItems.map((item) => {
+              {menuItems
+                .filter(item => user?.sidebar_settings?.[item.id] !== false)
+                .map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <Link

@@ -817,6 +817,95 @@ export default function IncomePage() {
                 </div>
               </div>
 
+              {/* Destination Selection */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-zinc-700">Destination</Label>
+                
+                {/* Type Toggle */}
+                <div className="grid grid-cols-2 gap-2 p-1 bg-zinc-100 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDestinationType('bank');
+                      setFormData({ ...formData, fund_source_id: '' });
+                    }}
+                    className={cn(
+                      "flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all",
+                      destinationType === 'bank'
+                        ? "bg-white text-zinc-900 shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-700"
+                    )}
+                  >
+                    <Landmark className="h-4 w-4" />
+                    Bank Account
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDestinationType('fund');
+                      setFormData({ ...formData, bank_account_id: '' });
+                    }}
+                    className={cn(
+                      "flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all",
+                      destinationType === 'fund'
+                        ? "bg-white text-zinc-900 shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-700"
+                    )}
+                  >
+                    <Wallet className="h-4 w-4" />
+                    Cash / Wallet
+                  </button>
+                </div>
+
+                {/* Specific Account Select */}
+                {destinationType === 'bank' ? (
+                  <Select
+                    value={formData.bank_account_id}
+                    onValueChange={(v) => setFormData({ ...formData, bank_account_id: v })}
+                    disabled={submitting}
+                  >
+                    <SelectTrigger className="h-11 bg-zinc-50/50 border-zinc-200/60">
+                      <SelectValue placeholder="Select Bank Account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {bankAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id.toString()}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{account.bank_name}</span>
+                            <span className="text-xs text-zinc-500">
+                              {/* Assuming formatCurrency is available in scope or just raw value */}
+                              On Hand: {userCurrency.symbol} {account.balance.toLocaleString()}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Select
+                    value={formData.fund_source_id}
+                    onValueChange={(v) => setFormData({ ...formData, fund_source_id: v })}
+                    disabled={submitting}
+                  >
+                    <SelectTrigger className="h-11 bg-zinc-50/50 border-zinc-200/60">
+                      <SelectValue placeholder="Select Fund Source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {fundSources.map((source) => (
+                        <SelectItem key={source.id} value={source.id.toString()}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{source.source_name}</span>
+                            <span className="text-xs text-zinc-500">
+                                On Hand: {userCurrency.symbol} {source.amount.toLocaleString()}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
               {/* Category Selection */}
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium text-zinc-700">Category</Label>

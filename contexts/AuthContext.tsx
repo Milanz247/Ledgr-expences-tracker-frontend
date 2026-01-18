@@ -9,6 +9,7 @@ interface User {
   name: string;
   email: string;
   profile_picture: string | null;
+  sidebar_settings?: Record<string, boolean>;
 }
 
 interface AuthContextType {
