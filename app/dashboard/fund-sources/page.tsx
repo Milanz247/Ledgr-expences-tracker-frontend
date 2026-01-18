@@ -16,7 +16,9 @@ import {
   ResponsiveModalBody,
   ResponsiveModalFooter,
 } from '@/components/ui/responsive-modal';
-import { Plus, Wallet, Trash2, DollarSign, Edit } from 'lucide-react';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
+import { Plus, Wallet, Trash2, DollarSign, Edit, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 interface FundSource {
@@ -40,6 +42,11 @@ export default function FundSourcesPage() {
   });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Confirm Modal
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchSources();
@@ -100,16 +107,25 @@ export default function FundSourcesPage() {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this fund source?')) return;
+  const handleDeleteClick = (id: number) => {
+    setDeleteId(id);
+    setDeleteModalOpen(true);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+    setIsDeleting(true);
     try {
-      await api.delete(`/fund-sources/${id}`);
+      await api.delete(`/fund-sources/${deleteId}`);
       await fetchSources();
+      setDeleteModalOpen(false);
     } catch (error: any) {
       console.error('Failed to delete fund source:', error);
       const errorMessage = error.response?.data?.message || 'Failed to delete fund source';
-      alert(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+      setDeleteId(null);
     }
   };
 
@@ -221,7 +237,7 @@ export default function FundSourcesPage() {
                       variant="outline"
                       size="sm"
                       className="flex-1 h-8 sm:h-9 text-xs sm:text-sm"
-                      onClick={() => handleDelete(source.id)}
+                      onClick={() => handleDeleteClick(source.id)}
                     >
                       <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                       Delete
@@ -314,12 +330,25 @@ export default function FundSourcesPage() {
                 Cancel
               </Button>
               <Button type="submit" disabled={submitting} className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 bg-emerald-600 hover:bg-emerald-700 text-white">
-                {submitting ? (editMode ? 'Updating...' : 'Adding...') : (editMode ? 'Update Source' : 'Add Source')}
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {editMode ? 'Updating...' : 'Adding...'}
+                  </>
+                ) : (editMode ? 'Update Source' : 'Add Source')}
               </Button>
             </ResponsiveModalFooter>
           </form>
         </ResponsiveModalContent>
       </ResponsiveModal>
+      <ConfirmModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Delete Fund Source?"
+        description="Are you sure you want to delete this fund source? This action cannot be undone."
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

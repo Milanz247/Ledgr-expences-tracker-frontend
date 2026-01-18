@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, CreditCard, Calendar, Calculator, Loader2 } from 'lucide-react';
+import { Plus, CreditCard, Calendar, Calculator, Loader2, LayoutGrid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,7 +16,9 @@ import {
     ResponsiveModalBody, 
     ResponsiveModalFooter,
 } from '@/components/ui/responsive-modal';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InstallmentCard from '@/components/InstallmentCard';
+import CurrencyDisplay from '@/components/CurrencyDisplay';
 import api from '@/lib/api';
 
 interface Installment {
@@ -28,20 +30,9 @@ interface Installment {
   paid_months: number;
   start_date: string;
   status: 'ongoing' | 'completed';
-  category: {
-    id: number;
-    name: string;
-  };
-  bank_account?: {
-    id: number;
-    bank_name: string;
-    balance: number;
-  };
-  fund_source?: {
-    id: number;
-    source_name: string;
-    amount: number;
-  };
+  category: { id: number; name: string; };
+  bank_account?: { id: number; bank_name: string; balance: number; };
+  fund_source?: { id: number; source_name: string; amount: number; };
 }
 
 export default function InstallmentsPage() {
@@ -59,6 +50,7 @@ export default function InstallmentsPage() {
     fund_source_id: 'none',
   });
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   
   // Data for dropdowns
   const [categories, setCategories] = useState<any[]>([]);
@@ -104,14 +96,13 @@ export default function InstallmentsPage() {
         return;
     }
 
+    setSubmitting(true);
     try {
         const payload = {
             ...formData,
             bank_account_id: formData.bank_account_id === 'none' ? null : formData.bank_account_id,
             fund_source_id: formData.fund_source_id === 'none' ? null : formData.fund_source_id,
         };
-
-
 
         if (editingId) {
             await api.put(`/installments/${editingId}`, payload);
@@ -126,6 +117,8 @@ export default function InstallmentsPage() {
         resetForm();
     } catch (error) {
         toast.error('Failed to save installment plan');
+    } finally {
+        setSubmitting(false);
     }
   };
 
@@ -168,7 +161,6 @@ export default function InstallmentsPage() {
       }
   };
 
-
   const calculateMonthly = () => {
       const total = Number(formData.total_amount);
       const months = Number(formData.total_months);
@@ -181,69 +173,114 @@ export default function InstallmentsPage() {
       try {
           await api.post(`/installments/${installment.id}/pay`, { months_to_pay: months });
           toast.success(`Payment for ${months} month(s) recorded`);
-          fetchData(); // Refresh list to show updated progress
+          fetchData();
       } catch (error: any) {
           toast.error(error.response?.data?.message || 'Payment failed');
       }
   };
 
+  // Metrics Calculation
+  const ongoingInstallments = installments.filter(i => i.status !== 'completed');
+  const completedInstallments = installments.filter(i => i.status === 'completed');
+  const totalMonthlyCommitment = ongoingInstallments.reduce((sum, i) => sum + Number(i.monthly_amount), 0);
+  const totalRemainingDebt = ongoingInstallments.reduce((sum, i) => {
+     const remaining = Number(i.total_amount) - (Number(i.monthly_amount) * i.paid_months);
+     return sum + Math.max(0, remaining);
+  }, 0);
+
   return (
-    <div className="space-y-6 pb-20 lg:pb-0">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 pb-20 lg:pb-0 max-w-[1920px] mx-auto animate-in fade-in duration-500">
+      
+      {/* 1. Header & Controls */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-zinc-200 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Active Installments</h1>
-          <p className="text-sm text-zinc-500 mt-1">Track and manage your monthly payments</p>
+          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight flex items-center gap-2">
+            <LayoutGrid className="h-6 w-6 text-zinc-400" />
+            Installment Plans
+          </h1>
+          <div className="flex gap-6 mt-3">
+             <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-bold text-zinc-400">Monthly Commitment</span>
+                <span className="text-sm font-bold text-zinc-900 font-mono"><CurrencyDisplay amount={totalMonthlyCommitment} /></span>
+             </div>
+             <div className="w-px h-4 bg-zinc-200" />
+             <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-bold text-zinc-400">Total Remaining</span>
+                <span className="text-sm font-bold text-zinc-900 font-mono"><CurrencyDisplay amount={totalRemainingDebt} /></span>
+             </div>
+          </div>
         </div>
-        <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl shadow-lg shadow-zinc-900/10 transition-all active:scale-95">
-          <Plus className="h-4 w-4 mr-2" />
-          New Plan
+        
+        <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="bg-zinc-900 hover:bg-zinc-800 text-white shadow-none h-9 text-xs">
+          <Plus className="h-3.5 w-3.5 mr-1.5" />
+          Create Plan
         </Button>
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-             {[1, 2, 3].map(i => (
-                 <div key={i} className="h-48 bg-gray-100 animate-pulse rounded-xl" />
-             ))}
-        </div>
-      ) : installments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
-           <div className="h-16 w-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
-             <CreditCard className="h-8 w-8 text-zinc-400" />
-           </div>
-           <h3 className="text-lg font-medium text-zinc-900">No active installments</h3>
-           <p className="text-sm text-zinc-500 mt-1 max-w-sm text-center">
-             Add your first installment plan to start tracking your monthly payments.
-           </p>
-           <Button variant="outline" className="mt-6" onClick={() => { resetForm(); setDialogOpen(true); }}>
-             Create Plan
-           </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-          {installments.map(installment => (
-            <InstallmentCard 
-                key={installment.id} 
-                installment={installment} 
-                onPay={handlePayInstallment}
-                onDelete={handleDelete}
-                onEdit={handleEdit}
-            />
-          ))}
-        </div>
-      )}
+      {/* 2. Content Area (Tabs & Grid) */}
+      <Tabs defaultValue="ongoing" className="w-full space-y-6">
+         <TabsList className="bg-zinc-100/50 p-1 w-fit">
+            <TabsTrigger value="ongoing" className="text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">Ongoing Plans ({ongoingInstallments.length})</TabsTrigger>
+            <TabsTrigger value="completed" className="text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">History ({completedInstallments.length})</TabsTrigger>
+         </TabsList>
+
+         <TabsContent value="ongoing" className="m-0">
+             {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                     {[1, 2, 3, 4].map(i => <div key={i} className="h-40 bg-zinc-100 animate-pulse rounded-lg" />)}
+                </div>
+             ) : ongoingInstallments.length === 0 ? (
+                <div className="text-center py-20 bg-zinc-50 border border-dashed border-zinc-200 rounded-xl">
+                   <p className="text-zinc-500 text-sm">No active installment plans.</p>
+                   <Button variant="link" onClick={() => setDialogOpen(true)} className="mt-1">Create your first one</Button>
+                </div>
+             ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {ongoingInstallments.map(installment => (
+                    <InstallmentCard 
+                        key={installment.id} 
+                        installment={installment} 
+                        onPay={handlePayInstallment}
+                        onDelete={handleDelete}
+                        onEdit={handleEdit}
+                    />
+                  ))}
+                </div>
+             )}
+         </TabsContent>
+
+         <TabsContent value="completed" className="m-0">
+             {completedInstallments.length === 0 ? (
+                <div className="text-center py-20 bg-zinc-50 border border-dashed border-zinc-200 rounded-xl">
+                   <p className="text-zinc-500 text-sm">No completed plans found.</p>
+                </div>
+             ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {completedInstallments.map(installment => (
+                    <InstallmentCard 
+                        key={installment.id} 
+                        installment={installment} 
+                        onPay={handlePayInstallment}
+                        onDelete={handleDelete}
+                        onEdit={handleEdit}
+                    />
+                  ))}
+                </div>
+             )}
+         </TabsContent>
+      </Tabs>
 
       {/* Create/Edit Modal */}
       <ResponsiveModal open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) resetForm();
       }}>
-        <ResponsiveModalContent>
-            <ResponsiveModalHeader>
-                <ResponsiveModalTitle>{editingId ? 'Edit Installment Plan' : 'Add New Installment Plan'}</ResponsiveModalTitle>
-                <ResponsiveModalDescription>{editingId ? 'Update the details of your installment plan.' : 'Enter details about your installment purchase.'}</ResponsiveModalDescription>
+        <ResponsiveModalContent className="sm:p-6 p-0">
+            <ResponsiveModalHeader className="px-5 pt-6 sm:px-0 sm:pt-0">
+                <ResponsiveModalTitle>{editingId ? 'Edit Plan' : 'New Installment Plan'}</ResponsiveModalTitle>
+                <ResponsiveModalDescription>Enter details about your installment purchase.</ResponsiveModalDescription>
             </ResponsiveModalHeader>
-            <ResponsiveModalBody>
+            <ResponsiveModalBody className="max-h-[85vh] overflow-y-auto px-5 py-4 pb-10 sm:px-0 sm:py-0 sm:pb-0">
                <div className="grid gap-4 py-2">
                  <div className="space-y-2">
                     <Label>Item Name</Label>
@@ -251,6 +288,7 @@ export default function InstallmentsPage() {
                         placeholder="e.g. iPhone 15 Pro" 
                         value={formData.item_name}
                         onChange={e => setFormData({...formData, item_name: e.target.value})}
+                        className="bg-zinc-50/50"
                     />
                  </div>
                  
@@ -262,6 +300,7 @@ export default function InstallmentsPage() {
                             placeholder="0.00"
                             value={formData.total_amount}
                             onChange={e => setFormData({...formData, total_amount: e.target.value})}
+                            className="bg-zinc-50/50"
                         />
                     </div>
                     <div className="space-y-2">
@@ -271,6 +310,7 @@ export default function InstallmentsPage() {
                             placeholder="e.g. 12"
                             value={formData.total_months}
                             onChange={e => setFormData({...formData, total_months: e.target.value})}
+                            className="bg-zinc-50/50"
                         />
                     </div>
                  </div>
@@ -282,7 +322,7 @@ export default function InstallmentsPage() {
                     <div className="relative">
                         <Calculator className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                         <Input 
-                            className="pl-9 bg-white"
+                            className="pl-9 bg-zinc-50/50"
                             value={formData.monthly_amount}
                             onChange={e => setFormData({...formData, monthly_amount: e.target.value})}
                             placeholder="0.00"
@@ -293,7 +333,7 @@ export default function InstallmentsPage() {
                  <div className="space-y-2">
                     <Label>Category</Label>
                     <Select value={formData.category_id} onValueChange={v => setFormData({...formData, category_id: v})}>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-zinc-50/50">
                             <SelectValue placeholder="Select Category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -310,6 +350,7 @@ export default function InstallmentsPage() {
                         type="date"
                         value={formData.start_date}
                         onChange={e => setFormData({...formData, start_date: e.target.value})}
+                        className="bg-zinc-50/50"
                     />
                  </div>
 
@@ -317,22 +358,24 @@ export default function InstallmentsPage() {
                      <Label>Payment Source (Optional)</Label>
                      <p className="text-[10px] text-zinc-500">Expenses created will be linked to this source.</p>
                      <div className="grid grid-cols-2 gap-2">
-                         <Select value={formData.bank_account_id} onValueChange={v => setFormData({...formData, bank_account_id: v})}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Bank Account" />
+                         <Select value={formData.bank_account_id} onValueChange={v => setFormData({...formData, bank_account_id: v === 'none' ? 'none' : v, fund_source_id: 'none'})}>
+                            <SelectTrigger className="bg-zinc-50/50">
+                                <SelectValue placeholder="Select Bank Account" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[100]">
                                 <SelectItem value="none">None</SelectItem>
                                 {bankAccounts.map(b => (
-                                    <SelectItem key={b.id} value={b.id.toString()}>{b.bank_name}</SelectItem>
+                                    <SelectItem key={b.id} value={b.id.toString()}>
+                                        {b.bank_name} <span className="text-zinc-400 text-xs ml-1 font-mono">- {b.account_number}</span>
+                                    </SelectItem>
                                 ))}
                             </SelectContent>
                          </Select>
-                         <Select value={formData.fund_source_id} onValueChange={v => setFormData({...formData, fund_source_id: v})}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Wallet/Cash" />
+                         <Select value={formData.fund_source_id} onValueChange={v => setFormData({...formData, fund_source_id: v === 'none' ? 'none' : v, bank_account_id: 'none'})}>
+                            <SelectTrigger className="bg-zinc-50/50">
+                                <SelectValue placeholder="Select Fund Source" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[100]">
                                 <SelectItem value="none">None</SelectItem>
                                 {fundSources.map(f => (
                                     <SelectItem key={f.id} value={f.id.toString()}>{f.source_name}</SelectItem>
@@ -343,9 +386,16 @@ export default function InstallmentsPage() {
                  </div>
                </div>
             </ResponsiveModalBody>
-            <ResponsiveModalFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleSubmit} className="bg-zinc-900 text-white">{editingId ? 'Update Plan' : 'Create Plan'}</Button>
+            <ResponsiveModalFooter className="flex flex-row gap-3 px-5 pb-6 sm:px-0 sm:pb-0">
+                <Button variant="outline" onClick={() => setDialogOpen(false)} className="flex-1 sm:flex-none">Cancel</Button>
+                <Button onClick={handleSubmit} disabled={submitting} className="flex-1 sm:flex-none bg-zinc-900 text-white hover:bg-zinc-800">
+                    {submitting ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {editingId ? 'Updating...' : 'Creating...'}
+                        </>
+                    ) : (editingId ? 'Update Plan' : 'Create Plan')}
+                </Button>
             </ResponsiveModalFooter>
         </ResponsiveModalContent>
       </ResponsiveModal>

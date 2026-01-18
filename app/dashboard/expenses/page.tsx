@@ -18,6 +18,7 @@ import {
   ResponsiveModalBody,
   ResponsiveModalFooter,
 } from '@/components/ui/responsive-modal';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 import {
   Select,
   SelectContent,
@@ -157,6 +158,11 @@ export default function ExpensesPage() {
   });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  
+  // Confirm Modal State
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Check if any filter is active
   const hasActiveFilters = searchQuery || selectedCategory || selectedSourceType || startDate || endDate;
@@ -399,14 +405,23 @@ export default function ExpensesPage() {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this expense?')) return;
+  const handleDeleteClick = (id: number) => {
+    setDeleteId(id);
+    setDeleteModalOpen(true);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+    setIsDeleting(true);
     try {
-      await api.delete(`/expenses/${id}`);
+      await api.delete(`/expenses/${deleteId}`);
       await fetchExpenses();
+      setDeleteModalOpen(false);
     } catch (error) {
       console.error('Failed to delete expense:', error);
+    } finally {
+      setIsDeleting(false);
+      setDeleteId(null);
     }
   };
 
@@ -668,7 +683,7 @@ export default function ExpensesPage() {
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(expense)} className="h-7 w-7 sm:h-8 sm:w-8 p-0">
                         <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-zinc-400" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(expense.id)} className="h-7 w-7 sm:h-8 sm:w-8 p-0">
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(expense.id)} className="h-7 w-7 sm:h-8 sm:w-8 p-0">
                         <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-rose-400" />
                       </Button>
                     </div>
@@ -735,7 +750,7 @@ export default function ExpensesPage() {
                             <Button variant="ghost" size="sm" onClick={() => handleEdit(expense)} className="h-8 w-8 p-0">
                               <Edit className="h-4 w-4 text-zinc-400" />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDelete(expense.id)} className="h-8 w-8 p-0">
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(expense.id)} className="h-8 w-8 p-0">
                               <Trash2 className="h-4 w-4 text-rose-400" />
                             </Button>
                           </div>
@@ -963,6 +978,16 @@ export default function ExpensesPage() {
           </form>
         </ResponsiveModalContent>
       </ResponsiveModal>
+
+      <ConfirmModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Delete Expense?"
+        description="Are you sure you want to delete this expense? This action cannot be undone."
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
+
 
       {/* Mobile Filter Drawer */}
       <Drawer open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen}>

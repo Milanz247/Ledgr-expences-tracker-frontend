@@ -182,15 +182,20 @@ export default function LoanDossierCard({ loan, onRepay, onEdit, onDelete }: Loa
             )}
           </div>
           
-          {/* Action Button */}
-           {loan.status !== 'paid' && (
+           {/* Action Button / Settled Badge */}
+           {loan.status !== 'paid' ? (
               <Button 
                 onClick={() => onRepay(loan)}
-                className="w-full bg-zinc-900 hover:bg-zinc-800 text-white shadow-none text-xs h-9"
+                className="w-full bg-zinc-900 hover:bg-zinc-800 text-white shadow-none text-xs h-9 mt-auto"
               >
                   <DollarSign className="h-3 w-3 mr-1.5" />
                   Make Repayment
               </Button>
+           ) : (
+             <div className="w-full h-9 flex items-center justify-center bg-zinc-100 text-zinc-500 rounded-md text-xs font-medium uppercase tracking-wider mt-auto border border-zinc-200">
+               <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full mr-2" />
+               Settled
+             </div>
            )}
 
         </div>

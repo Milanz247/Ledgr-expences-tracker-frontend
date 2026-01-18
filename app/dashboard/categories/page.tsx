@@ -15,6 +15,7 @@ import {
   ResponsiveModalBody,
   ResponsiveModalFooter,
 } from '@/components/ui/responsive-modal';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2, Edit, Check, Tag, Loader2, Search, TrendingUp, TrendingDown, X } from 'lucide-react';
 import { CATEGORY_ICONS, PRESET_COLORS, getIconComponent } from '@/lib/categoryIcons';
@@ -39,6 +40,11 @@ export default function CategoriesPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'expense' | 'income'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Confirm Modal
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -108,21 +114,29 @@ export default function CategoriesPage() {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (category: Category) => {
+  const handleDeleteClick = (category: Category) => {
     if (!category.user_id) {
       toast.error('Cannot delete default categories');
       return;
     }
+    setDeleteId(category.id);
+    setDeleteModalOpen(true);
+  };
 
-    if (!confirm(`Are you sure you want to delete "${category.name}"?`)) return;
-
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+    setIsDeleting(true);
     try {
-      await api.delete(`/categories/${category.id}`);
+      await api.delete(`/categories/${deleteId}`);
       toast.success('Category deleted successfully');
       await fetchCategories();
+      setDeleteModalOpen(false);
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Failed to delete category';
       toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+      setDeleteId(null);
     }
   };
 
@@ -484,7 +498,7 @@ export default function CategoriesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDelete(category)}
+                            onClick={() => handleDeleteClick(category)}
                             className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                           >
                             <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-rose-400" />
@@ -577,7 +591,7 @@ export default function CategoriesPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDelete(category)}
+                                onClick={() => handleDeleteClick(category)}
                                 className="h-8 w-8 p-0"
                               >
                                 <Trash2 className="h-4 w-4 text-rose-400" />
@@ -612,6 +626,14 @@ export default function CategoriesPage() {
           <CategoryForm />
         </ResponsiveModalContent>
       </ResponsiveModal>
+      <ConfirmModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Delete Category?"
+        description="Are you sure you want to delete this category? This might affect existing transactions."
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

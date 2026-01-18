@@ -3,7 +3,7 @@
 import { BankAccount } from '@/app/dashboard/bank-accounts/page';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, MoreVertical, Trash2, Copy, Share2, Wallet } from 'lucide-react';
+import { Edit, MoreVertical, Trash2, Copy, Share2, Wallet, CreditCard, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import CurrencyDisplay from './CurrencyDisplay';
@@ -32,108 +32,113 @@ export default function BankCard({ account, onEdit, onDelete }: BankCardProps) {
     };
 
     return (
-        <div className="relative group perspective-1000">
-             {/* Sleek Tile Container */}
+        <div className="relative group perspective-1000 h-full">
+             {/* Sleek Virtual Card Container */}
             <div className={cn(
-                "relative overflow-hidden rounded-xl border border-zinc-800 transition-all duration-300",
-                "bg-zinc-950 hover:bg-zinc-900/80 hover:border-zinc-700 hover:shadow-xl hover:shadow-black/50 hover:-translate-y-1",
-                "flex flex-col h-[180px] select-none"
+                "relative overflow-hidden rounded-xl transition-all duration-500 ease-out transform",
+                "bg-zinc-950 border border-zinc-800",
+                "group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-black/50 group-hover:border-zinc-700",
+                "flex flex-col h-[200px] select-none"
             )}>
                 
-                {/* Technical Grid Background Pattern (CSS Trick) */}
+                {/* Granular Noise / Dot Grid Texture */}
                 <div 
-                    className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-                    style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '16px 16px' }}
+                    className="absolute inset-0 opacity-[0.05] pointer-events-none" 
+                    style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '12px 12px' }}
                 />
+                
+                {/* Ambient Glow */}
+                <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/5 blur-[80px] rounded-full pointer-events-none" />
 
-                <div className="relative z-10 flex flex-col justify-between h-full p-5">
+                <div className="relative z-10 flex flex-col justify-between h-full p-6">
                     
-                    {/* Top Row: Bank Name & Balance */}
+                    {/* Top Row: Identification */}
                     <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">
-                             <div className="h-10 w-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0">
-                                <Wallet className="h-5 w-5 text-zinc-400" />
+                             <div className="h-9 w-9 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0">
+                                <Layers className="h-4 w-4 text-zinc-500 group-hover:text-emerald-500 transition-colors" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-base text-zinc-100 tracking-wide">{account.bank_name}</h3>
-                                <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Liquid Asset</p>
+                                <h3 className="font-bold text-sm text-zinc-100 tracking-wide uppercase">{account.bank_name}</h3>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="relative flex h-1.5 w-1.5">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                    </span>
+                                    <p className="text-[9px] text-emerald-500/80 uppercase tracking-widest font-semibold">Active Gateway</p>
+                                </div>
                             </div>
                         </div>
-                        <div className="text-right">
-                             <div className="font-bold text-lg text-emerald-500 tracking-tight">
-                                 <CurrencyDisplay amount={account.balance} />
-                             </div>
+                        
+                        {/* Actions */}
+                        <div className="flex items-center gap-1">
+                             <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-zinc-600 hover:text-zinc-300 hover:bg-zinc-900 rounded-md"
+                                onClick={handleShareInfo}
+                            >
+                                <Share2 className="h-3.5 w-3.5" />
+                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-600 hover:text-zinc-300 hover:bg-zinc-900 rounded-md">
+                                        <MoreVertical className="h-3.5 w-3.5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-40 bg-zinc-950 border-zinc-800 text-zinc-400">
+                                    <DropdownMenuItem className="focus:bg-zinc-900 focus:text-zinc-200 cursor-pointer" onClick={() => onEdit(account)}>
+                                        <Edit className="mr-2 h-3.5 w-3.5" /> Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                        className="text-rose-900 focus:bg-rose-950/30 focus:text-rose-500 cursor-pointer" 
+                                        onClick={() => onDelete(account.id)}
+                                    >
+                                        <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
 
-                    {/* Middle Row: Account Number */}
-                    <div className="flex items-center gap-3 pt-2">
-                        <p className="font-mono text-xl text-zinc-300 tracking-widest tabular-nums">
-                            {account.account_number}
-                        </p>
-                         <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-6 w-6 text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800/50 rounded-md transition-colors"
-                            onClick={handleCopyAccountNumber}
-                            title="Copy Account Number"
-                        >
-                            <Copy className="h-3 w-3" />
-                        </Button>
+                    {/* Middle: Financials */}
+                    <div className="space-y-1">
+                        <div className="flex items-baseline gap-1">
+                             <span className="text-2xl font-bold text-white tracking-tight tabular-nums">
+                                 <CurrencyDisplay amount={account.balance} />
+                             </span>
+                        </div>
+                        <div className="flex items-center gap-2 group/copy cursor-pointer w-fit" onClick={handleCopyAccountNumber}>
+                            <p className="font-mono text-sm text-zinc-500 tracking-[0.2em] group-hover/copy:text-zinc-300 transition-colors">
+                                {account.account_number}
+                            </p>
+                            <Copy className="h-3 w-3 text-zinc-700 group-hover/copy:text-zinc-400 transition-colors opacity-0 group-hover/copy:opacity-100" />
+                        </div>
                     </div>
 
-                    {/* Bottom Row: Holder & Branch + Actions */}
-                    <div className="flex items-end justify-between border-t border-zinc-900/50 pt-3 mt-1">
-                        <div className="space-y-0.5">
-                            <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold">Holder</p>
-                             <p className="text-sm font-medium text-zinc-400 uppercase truncate max-w-[150px]">
-                                {account.account_holder_name || 'Unknown'}
+                    {/* Bottom Row: Technical Metadata */}
+                    <div className="flex items-end justify-between border-t border-zinc-900 pt-4 mt-2">
+                        <div className="space-y-1">
+                            <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold">Holder</p>
+                             <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest truncate max-w-[120px]">
+                                {account.account_holder_name || 'ANONYMOUS'}
                             </p>
                         </div>
                         
-                        <div className="flex items-center gap-4">
-                            <div className="text-right space-y-0.5">
-                                <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold">Branch</p>
-                                <p className="text-sm font-mono text-zinc-400">
-                                    {account.branch_code || 'N/A'}
-                                </p>
-                            </div>
-                            
-                            {/* Actions Group */}
-                            <div className="flex items-center gap-1 pl-3 border-l border-zinc-800">
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-8 w-8 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-md"
-                                    onClick={handleShareInfo}
-                                    title="Share Info"
-                                >
-                                    <Share2 className="h-4 w-4" />
-                                </Button>
-                                
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-md">
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-40 bg-zinc-950 border-zinc-800 text-zinc-400">
-                                        <DropdownMenuItem className="focus:bg-zinc-900 focus:text-zinc-200 cursor-pointer" onClick={() => onEdit(account)}>
-                                            <Edit className="mr-2 h-4 w-4" /> Edit
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem 
-                                            className="text-rose-900 focus:bg-rose-950/30 focus:text-rose-500 cursor-pointer" 
-                                            onClick={() => onDelete(account.id)}
-                                        >
-                                            <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
+                        <div className="text-right space-y-1">
+                            <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold">Branch</p>
+                            <p className="text-[10px] font-mono text-zinc-400 tracking-wider">
+                                {account.branch_code || '---'}
+                            </p>
                         </div>
                     </div>
                 </div>
             </div>
+            
+            {/* Tilt Reflection Effect (Optional CSS Polish) */}
+            <style jsx>{`
+                .perspective-1000 { perspective: 1000px; }
+            `}</style>
         </div>
     );
 }

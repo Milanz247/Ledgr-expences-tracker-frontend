@@ -22,9 +22,11 @@ import {
   ResponsiveModalBody,
   ResponsiveModalFooter,
 } from '@/components/ui/responsive-modal';
-import { Plus, Landmark, Loader2 } from 'lucide-react';
-import BankCard from '@/components/BankCard'; // Ensure this path is correct based on where you saved it
+import { ConfirmModal } from '@/components/ui/confirm-modal';
+import { Plus, Landmark, Loader2, Wallet, ArrowUpRight } from 'lucide-react';
+import BankCard from '@/components/BankCard';
 import { toast } from 'sonner';
+import CurrencyDisplay from '@/components/CurrencyDisplay';
 
 export interface BankAccount {
   id: number;
@@ -76,6 +78,11 @@ export default function BankAccountsPage() {
 
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Confirm Modal State
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchAccounts();
@@ -154,16 +161,25 @@ export default function BankAccountsPage() {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this bank account?')) return;
+  const handleDeleteClick = (id: number) => {
+    setDeleteId(id);
+    setDeleteModalOpen(true);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+    setIsDeleting(true);
     try {
-      await api.delete(`/bank-accounts/${id}`);
+      await api.delete(`/bank-accounts/${deleteId}`);
       toast.success('Bank account deleted');
       await fetchAccounts();
+      setDeleteModalOpen(false);
     } catch (error: any) {
         console.error('Failed to delete account:', error);
         toast.error(error.response?.data?.message || 'Failed to delete account');
+    } finally {
+      setIsDeleting(false);
+      setDeleteId(null);
     }
   };
 
@@ -176,6 +192,10 @@ export default function BankAccountsPage() {
     setError('');
   };
 
+  // Metrics
+  const totalLiquidity = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
+  const primaryGateway = accounts.reduce((prev, current) => (Number(prev.balance) > Number(current.balance)) ? prev : current, accounts[0] || null);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -185,50 +205,65 @@ export default function BankAccountsPage() {
   }
 
   return (
-    <div className="space-y-8 pb-24 lg:pb-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
-            <Landmark className="h-6 w-6 text-indigo-600" />
+    <div className="space-y-8 pb-24 lg:pb-6 max-w-[1920px] mx-auto animate-in fade-in duration-500">
+      {/* 1. Header & Summary Bar */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
+        <div className="space-y-4">
+          <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2 tracking-tight">
+            <Wallet className="h-6 w-6 text-zinc-400" />
             My Wallet
           </h1>
-          <p className="text-zinc-500 text-sm mt-0.5">Manage your bank accounts and cards</p>
+          
+          <div className="flex gap-8">
+             <div className="space-y-0.5">
+                <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Total Liquidity</p>
+                <p className="text-xl font-bold text-zinc-900 font-mono tracking-tight">
+                    <CurrencyDisplay amount={totalLiquidity} />
+                </p>
+             </div>
+             
+             {primaryGateway && (
+                <div className="space-y-0.5 border-l border-zinc-200 pl-8">
+                    <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Primary Gateway</p>
+                    <p className="text-xl font-bold text-zinc-900 font-mono tracking-tight truncate max-w-[200px]">
+                        {primaryGateway.bank_name}
+                    </p>
+                </div>
+             )}
+          </div>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="bg-zinc-900 hover:bg-zinc-800">
+        
+        <Button onClick={() => setDialogOpen(true)} className="bg-zinc-900 hover:bg-zinc-800 text-white shadow-lg shadow-zinc-900/10 transition-all hover:-translate-y-0.5">
           <Plus className="h-4 w-4 mr-2" />
           Add New Card
         </Button>
       </div>
 
-      {accounts.length === 0 ? (
-        <Card className="border-dashed border-2 bg-zinc-50/50">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="bg-zinc-100 p-4 rounded-full mb-4">
-                <Landmark className="h-8 w-8 text-zinc-400" />
-            </div>
-            <p className="text-lg font-medium text-zinc-900 mb-1">No bank accounts added</p>
-            <p className="text-zinc-500 mb-6 text-center max-w-sm">
-                Add your bank details to track balances and expenses.
-            </p>
-            <Button onClick={() => setDialogOpen(true)} variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Add First Account
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      {/* 2. Cards Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {accounts.map((account) => (
             <BankCard 
                 key={account.id} 
                 account={account} 
                 onEdit={handleEdit} 
-                onDelete={handleDelete} 
+                onDelete={handleDeleteClick} 
             />
           ))}
-        </div>
-      )}
+
+          {/* Bento Empty State / Add Placeholder */}
+           <div 
+             onClick={() => setDialogOpen(true)}
+             className="group relative h-[200px] rounded-xl border border-dashed border-zinc-300 hover:border-zinc-400 bg-zinc-50 hover:bg-zinc-100 transition-all cursor-pointer flex flex-col items-center justify-center gap-3"
+           >
+              <div className="h-12 w-12 rounded-full bg-white border border-zinc-200 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Plus className="h-5 w-5 text-zinc-400" />
+              </div>
+              <div className="text-center">
+                  <p className="font-semibold text-zinc-900">Initialize New Asset</p>
+                  <p className="text-xs text-zinc-500 mt-1">Add another bank or wallet</p>
+              </div>
+           </div>
+      </div>
 
       {/* Add/Edit Modal */}
       <ResponsiveModal open={dialogOpen} onOpenChange={(open) => !open && handleCloseDialog()}>
@@ -344,12 +379,25 @@ export default function BankAccountsPage() {
                 Cancel
               </Button>
               <Button type="submit" disabled={submitting} className="w-full sm:flex-1 h-11 bg-zinc-900 hover:bg-zinc-800">
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (editMode ? 'Update Card' : 'Create Card')}
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (editMode ? 'Update Card' : 'Create Card')}
               </Button>
             </ResponsiveModalFooter>
           </form>
         </ResponsiveModalContent>
       </ResponsiveModal>
+      <ConfirmModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Delete Bank Account?"
+        description="Are you sure you want to delete this bank account? This action cannot be undone."
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

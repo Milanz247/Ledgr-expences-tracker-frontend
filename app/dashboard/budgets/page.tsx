@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, TrendingUp, AlertTriangle, CheckCircle2, PiggyBank, Edit, Trash2 } from 'lucide-react';
+import { Plus, TrendingUp, AlertTriangle, CheckCircle2, PiggyBank, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import {
   ResponsiveModal,
@@ -14,6 +14,8 @@ import {
   ResponsiveModalBody,
   ResponsiveModalFooter,
 } from '@/components/ui/responsive-modal';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
+
 
 interface Budget {
   id: number;
@@ -65,6 +67,11 @@ export default function BudgetsPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // Confirm Modal State
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -237,12 +244,17 @@ export default function BudgetsPage() {
     }
   };
 
-  const handleDeleteBudget = async (budgetId: number) => {
-    if (!confirm('Are you sure you want to delete this budget?')) return;
+  const handleDeleteClick = (budgetId: number) => {
+    setDeleteId(budgetId);
+    setDeleteModalOpen(true);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+    setIsDeleting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/budgets/${budgetId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/budgets/${deleteId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -252,6 +264,7 @@ export default function BudgetsPage() {
 
       if (res.ok) {
         fetchData();
+        setDeleteModalOpen(false);
       } else {
         const error = await res.json();
         alert(error.message || 'Failed to delete budget');
@@ -259,6 +272,9 @@ export default function BudgetsPage() {
     } catch (error) {
       console.error('Error deleting budget:', error);
       alert('Failed to delete budget');
+    } finally {
+      setIsDeleting(false);
+      setDeleteId(null);
     }
   };
 
@@ -484,7 +500,7 @@ export default function BudgetsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteBudget(budget.id)}
+                        onClick={() => handleDeleteClick(budget.id)}
                         className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -615,7 +631,12 @@ export default function BudgetsPage() {
                 Cancel
               </Button>
               <Button type="submit" className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 bg-zinc-900 hover:bg-zinc-800 text-white" disabled={submitting}>
-                {submitting ? 'Creating...' : 'Create Budget'}
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : 'Create Budget'}
               </Button>
             </ResponsiveModalFooter>
           </form>
@@ -703,12 +724,25 @@ export default function BudgetsPage() {
                 Cancel
               </Button>
               <Button type="submit" className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 bg-zinc-900 hover:bg-zinc-800 text-white" disabled={submitting}>
-                {submitting ? 'Updating...' : 'Update Budget'}
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : 'Update Budget'}
               </Button>
             </ResponsiveModalFooter>
           </form>
         </ResponsiveModalContent>
       </ResponsiveModal>
+      <ConfirmModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Delete Budget?"
+        description="Are you sure you want to delete this budget? This will remove the spending limit for this category for this month."
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
