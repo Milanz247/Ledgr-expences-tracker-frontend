@@ -168,7 +168,7 @@ export default function CategoriesPage() {
 
     return (
       <form onSubmit={handleSubmit} className="flex flex-col h-full">
-          <ResponsiveModalBody className="space-y-4 flex-1 overflow-y-auto min-h-0 px-4 sm:px-6">
+          <ResponsiveModalBody className="space-y-4">
             {error && (
               <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-sm border border-rose-200/60">
                 {error}
@@ -183,7 +183,6 @@ export default function CategoriesPage() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                autoFocus
                 disabled={submitting}
                 className="h-11 bg-zinc-50/50 border-zinc-200/60"
               />
@@ -312,28 +311,31 @@ export default function CategoriesPage() {
           </div>
         </ResponsiveModalBody>
 
-        <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6 sticky bottom-0 z-10 w-full mb-safe">
+        <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6 w-full shrink-0">
           <Button
             type="button"
             variant="outline"
             onClick={handleCloseDialog}
             disabled={submitting}
-            className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 border-zinc-300 hover:bg-zinc-100"
+            className="h-11 w-full sm:flex-1 text-base rounded-xl border-zinc-200/60 hover:bg-zinc-100 hover:text-zinc-900 order-2 sm:order-1"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={submitting}
-            className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 bg-zinc-900 hover:bg-zinc-800 text-white"
+            className="h-11 w-full sm:flex-1 bg-zinc-900 hover:bg-zinc-800 text-white text-base rounded-xl shadow-lg shadow-zinc-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] order-1 sm:order-2"
           >
             {submitting ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Saving...
               </>
             ) : (
-              editingCategory ? 'Update Category' : 'Create Category'
+              <>
+                <Check className="mr-2 h-5 w-5" />
+                {editingCategory ? 'Update Category' : 'Create Category'}
+              </>
             )}
           </Button>
         </ResponsiveModalFooter>
