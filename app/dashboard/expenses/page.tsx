@@ -45,6 +45,7 @@ import {
 import { format } from 'date-fns';
 import * as LucideIcons from 'lucide-react';
 import PaymentSourceBadge from '@/components/PaymentSourceBadge';
+import CurrencyDisplay from '@/components/CurrencyDisplay';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerBody, DrawerFooter } from '@/components/ui/drawer';
@@ -410,10 +411,7 @@ export default function ExpensesPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'LKR',
-    }).format(amount);
+    return <CurrencyDisplay amount={amount} />;
   };
 
   const getIcon = (iconName: string) => {
@@ -654,9 +652,11 @@ export default function ExpensesPage() {
                       <span className="text-rose-600 scale-75 sm:scale-100">{getIcon(expense.category.icon)}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center justify-between mt-2">
                         <p className="font-medium text-zinc-900 truncate text-sm sm:text-base">{expense.category.name}</p>
-                        <p className="font-bold text-rose-600 shrink-0 text-sm sm:text-base">{formatCurrency(expense.amount)}</p>
+                        <span className="font-semibold text-zinc-900">
+                          {formatCurrency(Number.parseFloat(expense.amount.toString()))}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <p className="text-[10px] sm:text-xs text-zinc-500 truncate">{expense.description || 'No description'}</p>
@@ -727,10 +727,10 @@ export default function ExpensesPage() {
                             <PaymentSourceBadge type="loan" name={expense.loan.lender_name} variant="sm" />
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm font-semibold text-rose-600 text-right">
-                          {formatCurrency(expense.amount)}
-                        </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-zinc-900">
+                      {formatCurrency(Number.parseFloat(expense.amount.toString()))}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-right">
                           <div className="flex justify-end gap-1">
                             <Button variant="ghost" size="sm" onClick={() => handleEdit(expense)} className="h-8 w-8 p-0">
                               <Edit className="h-4 w-4 text-zinc-400" />

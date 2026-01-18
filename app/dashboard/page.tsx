@@ -29,6 +29,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { format } from 'date-fns';
+import CurrencyDisplay from '@/components/CurrencyDisplay';
 
 interface DashboardStats {
   total_balance: number;
@@ -68,13 +69,8 @@ export default function DashboardPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'LKR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+  const formatCurrency = (amount: number, minimumFractionDigits = 0) => {
+    return <CurrencyDisplay amount={amount} decimals={minimumFractionDigits} />;
   };
 
   const getIcon = (iconName: string) => {
@@ -310,7 +306,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-zinc-900">{formatCurrency(bill.amount)}</p>
+                      <div className="font-bold text-zinc-900">{formatCurrency(bill.amount)}</div>
                       <p className={`text-xs font-medium mt-1 ${
                         isToday
                           ? 'text-rose-600'
@@ -397,16 +393,18 @@ export default function DashboardPage() {
                             <div className="flex items-center gap-2">
                               <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
                               <span className="text-xs text-zinc-500">Income:</span>
-                              <span className="text-xs font-bold text-zinc-900 ml-auto">
-                                {formatCurrency(payload[0].value)}
-                              </span>
+                                <CurrencyDisplay
+                                  amount={payload[0].value}
+                                  className="text-xs font-bold text-zinc-900 ml-auto"
+                                />
                             </div>
                             <div className="flex items-center gap-2">
                               <div className="h-2.5 w-2.5 rounded-full bg-rose-500" />
                               <span className="text-xs text-zinc-500">Expenses:</span>
-                              <span className="text-xs font-bold text-zinc-900 ml-auto">
-                                {formatCurrency(payload[1].value)}
-                              </span>
+                                <CurrencyDisplay
+                                  amount={payload[1].value}
+                                  className="text-xs font-bold text-zinc-900 ml-auto"
+                                />
                             </div>
                           </div>
                         </div>

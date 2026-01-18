@@ -21,12 +21,17 @@ import {
   Settings,
   PiggyBank,
   RefreshCw,
+  Eye,
+  EyeOff,
+  Calendar,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import BottomNav from '@/components/BottomNav';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import { useStealthMode } from '@/contexts/StealthModeContext';
+import NotificationCenter from '@/components/NotificationCenter';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
@@ -37,6 +42,7 @@ const menuItems = [
   { icon: CreditCard, label: 'Loans', href: '/dashboard/loans' },
   { icon: Landmark, label: 'Bank Accounts', href: '/dashboard/bank-accounts' },
   { icon: Wallet, label: 'Cash & Wallets', href: '/dashboard/fund-sources' },
+  { icon: Calendar, label: 'Installments', href: '/dashboard/installments' },
   { icon: Tag, label: 'Categories', href: '/dashboard/categories' },
 ];
 
@@ -60,6 +66,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { isStealthMode, toggleStealthMode } = useStealthMode();
 
   const handleLogout = async () => {
     await logout();
@@ -168,11 +175,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               {/* Right side buttons */}
               <div className="flex items-center gap-1">
-                {/* Notification Bell */}
-                <button className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-zinc-100 transition-all duration-200 relative group">
-                  <Bell className="h-5 w-5 text-zinc-500 group-hover:text-zinc-700 transition-colors" />
-                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
+                {/* Stealth Mode Toggle */}
+                <button
+                  onClick={toggleStealthMode}
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-zinc-100 transition-all duration-200 group relative"
+                  title={isStealthMode ? "Disable Stealth Mode" : "Enable Stealth Mode"}
+                >
+                  {isStealthMode ? (
+                    <EyeOff className="h-5 w-5 text-zinc-500 group-hover:text-zinc-700 transition-colors" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-zinc-500 group-hover:text-zinc-700 transition-colors" />
+                  )}
                 </button>
+
+                {/* Notification Center */}
+                <NotificationCenter />
 
                 {/* Logout Button */}
                 <button

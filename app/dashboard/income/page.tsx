@@ -46,6 +46,7 @@ import { getIconComponent } from '@/lib/categoryIcons';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import PaymentSourceBadge from '@/components/PaymentSourceBadge';
+import CurrencyDisplay from '@/components/CurrencyDisplay';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 
@@ -405,10 +406,7 @@ export default function IncomePage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'LKR',
-    }).format(amount);
+    return <CurrencyDisplay amount={amount} />;
   };
 
   const getTotalIncome = () => {
@@ -672,7 +670,9 @@ export default function IncomePage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <p className="font-medium text-zinc-900 truncate text-sm sm:text-base">{income.category.name}</p>
-                          <p className="font-bold text-emerald-600 shrink-0 text-sm sm:text-base">+{formatCurrency(income.amount)}</p>
+                          <span className="font-bold text-emerald-600 shrink-0 text-sm sm:text-base">
+                            + {formatCurrency(Number.parseFloat(income.amount.toString()))}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-[10px] sm:text-xs text-zinc-500 truncate">{income.description || 'No description'}</p>
@@ -747,7 +747,7 @@ export default function IncomePage() {
                             )}
                           </td>
                           <td className="px-4 py-3 text-sm font-semibold text-emerald-600 text-right">
-                            +{formatCurrency(income.amount)}
+                            + {formatCurrency(Number.parseFloat(income.amount.toString()))}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { StealthModeProvider } from "@/contexts/StealthModeContext";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -67,7 +68,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          {children}
+          <StealthModeProvider>
+            {children}
+          </StealthModeProvider>
         </AuthProvider>
         <Toaster position="top-right" richColors />
       </body>
