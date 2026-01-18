@@ -2,10 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   ResponsiveModal,
   ResponsiveModalContent,
@@ -15,26 +22,58 @@ import {
   ResponsiveModalBody,
   ResponsiveModalFooter,
 } from '@/components/ui/responsive-modal';
-import { Plus, Landmark, Trash2, Edit } from 'lucide-react';
+import { Plus, Landmark, Loader2 } from 'lucide-react';
+import BankCard from '@/components/BankCard'; // Ensure this path is correct based on where you saved it
+import { toast } from 'sonner';
 
-interface BankAccount {
+export interface BankAccount {
   id: number;
   bank_name: string;
   account_number: string;
   balance: number;
+  account_holder_name?: string;
+  branch_code?: string;
+  color?: string;
 }
+
+const SRI_LANKAN_BANKS = [
+  'Bank of Ceylon',
+  'Peoples Bank',
+  'Sampath Bank',
+  'Hatton National Bank',
+  'Commercial Bank',
+  'Nations Trust Bank',
+  'Pan Asia Bank',
+  'Seylan Bank',
+  'National Development Bank',
+  'DFCC Bank',
+  'Amana Bank',
+  'Union Bank',
+  'Cargills Bank',
+  'Standard Chartered Bank',
+  'HSBC',
+  'Other'
+];
 
 export default function BankAccountsPage() {
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Modal State
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  
+  // Form State
   const [formData, setFormData] = useState({
     bank_name: '',
     account_number: '',
     balance: '',
+    account_holder_name: '',
+    branch_code: '',
   });
+  const [selectedBankListValue, setSelectedBankListValue] = useState('');
+
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -49,8 +88,18 @@ export default function BankAccountsPage() {
       setAccounts(Array.isArray(accountsData) ? accountsData : []);
     } catch (error) {
       console.error('Failed to fetch accounts:', error);
+      toast.error('Failed to load bank accounts');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBankSelect = (value: string) => {
+    setSelectedBankListValue(value);
+    if (value !== 'Other') {
+      setFormData(prev => ({ ...prev, bank_name: value }));
+    } else {
+        setFormData(prev => ({ ...prev, bank_name: '' }));
     }
   };
 
@@ -60,27 +109,28 @@ export default function BankAccountsPage() {
     setSubmitting(true);
 
     try {
+      const payload = {
+        bank_name: formData.bank_name,
+        account_number: formData.account_number,
+        balance: parseFloat(formData.balance),
+        account_holder_name: formData.account_holder_name,
+        branch_code: formData.branch_code,
+      };
+
       if (editMode && editingId) {
-        await api.put(`/bank-accounts/${editingId}`, {
-          bank_name: formData.bank_name,
-          account_number: formData.account_number,
-          balance: parseFloat(formData.balance),
-        });
+        await api.put(`/bank-accounts/${editingId}`, payload);
+        toast.success('Bank account updated successfully');
       } else {
-        await api.post('/bank-accounts', {
-          bank_name: formData.bank_name,
-          account_number: formData.account_number,
-          balance: parseFloat(formData.balance),
-        });
+        await api.post('/bank-accounts', payload);
+        toast.success('Bank account created successfully');
       }
 
       await fetchAccounts();
-      setDialogOpen(false);
-      setEditMode(false);
-      setEditingId(null);
-      setFormData({ bank_name: '', account_number: '', balance: '' });
+      handleCloseDialog();
     } catch (err: any) {
+      console.error(err);
       setError(err.response?.data?.message || `Failed to ${editMode ? 'update' : 'create'} account`);
+      toast.error(err.response?.data?.message || 'Operation failed');
     } finally {
       setSubmitting(false);
     }
@@ -89,10 +139,17 @@ export default function BankAccountsPage() {
   const handleEdit = (account: BankAccount) => {
     setEditMode(true);
     setEditingId(account.id);
+    
+    // Check if bank is in list
+    const isKnownBank = SRI_LANKAN_BANKS.includes(account.bank_name);
+    setSelectedBankListValue(isKnownBank ? account.bank_name : 'Other');
+
     setFormData({
       bank_name: account.bank_name,
       account_number: account.account_number,
       balance: account.balance.toString(),
+      account_holder_name: account.account_holder_name || '',
+      branch_code: account.branch_code || '',
     });
     setDialogOpen(true);
   };
@@ -102,186 +159,192 @@ export default function BankAccountsPage() {
 
     try {
       await api.delete(`/bank-accounts/${id}`);
+      toast.success('Bank account deleted');
       await fetchAccounts();
-    } catch (error) {
-      console.error('Failed to delete account:', error);
+    } catch (error: any) {
+        console.error('Failed to delete account:', error);
+        toast.error(error.response?.data?.message || 'Failed to delete account');
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'LKR',
-    }).format(amount);
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditMode(false);
+    setEditingId(null);
+    setFormData({ bank_name: '', account_number: '', balance: '', account_holder_name: '', branch_code: '' });
+    setSelectedBankListValue('');
+    setError('');
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <Loader2 className="animate-spin h-8 w-8 text-zinc-400" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 pb-24 lg:pb-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Bank Accounts</h1>
-          <p className="text-slate-600 mt-1">Manage your bank accounts and balances</p>
+          <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
+            <Landmark className="h-6 w-6 text-indigo-600" />
+            My Wallet
+          </h1>
+          <p className="text-zinc-500 text-sm mt-0.5">Manage your bank accounts and cards</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
+        <Button onClick={() => setDialogOpen(true)} className="bg-zinc-900 hover:bg-zinc-800">
           <Plus className="h-4 w-4 mr-2" />
-          Add Account
+          Add New Card
         </Button>
       </div>
 
       {accounts.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Landmark className="h-12 w-12 text-slate-400 mb-4" />
-            <p className="text-lg font-medium text-slate-900 mb-2">No bank accounts yet</p>
-            <p className="text-slate-600 mb-4">Add your first bank account to get started</p>
-            <Button onClick={() => setDialogOpen(true)}>
+        <Card className="border-dashed border-2 bg-zinc-50/50">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="bg-zinc-100 p-4 rounded-full mb-4">
+                <Landmark className="h-8 w-8 text-zinc-400" />
+            </div>
+            <p className="text-lg font-medium text-zinc-900 mb-1">No bank accounts added</p>
+            <p className="text-zinc-500 mb-6 text-center max-w-sm">
+                Add your bank details to track balances and expenses.
+            </p>
+            <Button onClick={() => setDialogOpen(true)} variant="outline">
               <Plus className="h-4 w-4 mr-2" />
-              Add Bank Account
+              Add First Account
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {accounts.map((account) => (
-            <Card key={account.id} className="hover:shadow-lg transition-shadow py-3 sm:py-6">
-              <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="bg-primary/10 rounded-lg p-1.5 sm:p-2">
-                      <Landmark className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base sm:text-lg">{account.bank_name}</CardTitle>
-                      <CardDescription className="text-[10px] sm:text-xs">
-                        {account.account_number}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="px-3 sm:px-6">
-                <div className="space-y-3 sm:space-y-4">
-                  <div>
-                    <p className="text-xs sm:text-sm text-slate-600 mb-0.5 sm:mb-1">Current Balance</p>
-                    <p className="text-xl sm:text-2xl font-bold text-slate-900">
-                      {formatCurrency(account.balance)}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 h-8 sm:h-9 text-xs sm:text-sm"
-                      onClick={() => handleEdit(account)}
-                    >
-                      <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 h-8 sm:h-9 text-xs sm:text-sm"
-                      onClick={() => handleDelete(account.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <BankCard 
+                key={account.id} 
+                account={account} 
+                onEdit={handleEdit} 
+                onDelete={handleDelete} 
+            />
           ))}
         </div>
       )}
 
-      {/* Add Account Dialog */}
-      <ResponsiveModal open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Add/Edit Modal */}
+      <ResponsiveModal open={dialogOpen} onOpenChange={(open) => !open && handleCloseDialog()}>
         <ResponsiveModalContent>
           <ResponsiveModalHeader>
-            <ResponsiveModalTitle>{editMode ? 'Edit' : 'Add'} Bank Account</ResponsiveModalTitle>
+            <ResponsiveModalTitle>{editMode ? 'Edit Card Details' : 'Add New Bank Card'}</ResponsiveModalTitle>
             <ResponsiveModalDescription>
-              {editMode ? 'Update' : 'Add a new'} bank account to track your finances
+              {editMode ? 'Update your virtual card details.' : 'Enter your bank details to generate a virtual card.'}
             </ResponsiveModalDescription>
           </ResponsiveModalHeader>
           <form onSubmit={handleSubmit} className="flex flex-col h-full">
             <ResponsiveModalBody className="space-y-4">
-
-
               {error && (
-                <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+                <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-sm border border-rose-200/60">
                   {error}
                 </div>
               )}
 
+              {/* Bank Selection */}
               <div className="space-y-2">
-                <Label htmlFor="bank_name">Bank Name</Label>
+                <Label htmlFor="bank_select">Bank Name</Label>
+                <Select value={selectedBankListValue} onValueChange={handleBankSelect}>
+                  <SelectTrigger className="h-11 bg-zinc-50/50 border-zinc-200/60">
+                    <SelectValue placeholder="Select Bank" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SRI_LANKAN_BANKS.map((bank) => (
+                      <SelectItem key={bank} value={bank}>
+                        {bank}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {/* Custom Bank Name Input */}
+                {selectedBankListValue === 'Other' && (
+                     <Input
+                        placeholder="Enter Bank Name"
+                        value={formData.bank_name}
+                        onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+                        required
+                        className="h-11 mt-2 bg-white border-zinc-200/60"
+                        autoFocus
+                    />
+                )}
+              </div>
+
+               {/* Account Holder */}
+               <div className="space-y-2">
+                <Label htmlFor="holder_name">Account Holder Name</Label>
                 <Input
-                  id="bank_name"
-                  placeholder="e.g., Bank of Ceylon"
-                  value={formData.bank_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, bank_name: e.target.value })
-                  }
-                  required
-                  disabled={submitting}
+                  id="holder_name"
+                  placeholder="e.g. JOHN DOE"
+                  value={formData.account_holder_name}
+                  onChange={(e) => setFormData({ ...formData, account_holder_name: e.target.value })}
+                  className="h-11 bg-zinc-50/50 border-zinc-200/60 uppercase placeholder:normal-case"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="account_number">Account Number</Label>
-                <Input
-                  id="account_number"
-                  placeholder="e.g., 1234567890"
-                  value={formData.account_number}
-                  onChange={(e) =>
-                    setFormData({ ...formData, account_number: e.target.value })
-                  }
-                  required
-                  disabled={submitting}
-                />
+              {/* Account Number & Branch Code */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2 space-y-2">
+                    <Label htmlFor="account_number">Account Number</Label>
+                    <Input
+                    id="account_number"
+                    placeholder="0000 0000 0000"
+                    value={formData.account_number}
+                    onChange={(e) => setFormData({ ...formData, account_number: e.target.value })}
+                    required
+                    className="h-11 bg-zinc-50/50 border-zinc-200/60 font-mono"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="branch_code">Branch Code</Label>
+                     <Input
+                    id="branch_code"
+                    placeholder="000"
+                    value={formData.branch_code}
+                    onChange={(e) => setFormData({ ...formData, branch_code: e.target.value })}
+                    className="h-11 bg-zinc-50/50 border-zinc-200/60"
+                    />
+                </div>
               </div>
 
+              {/* Balance */}
               <div className="space-y-2">
-                <Label htmlFor="balance">Initial Balance</Label>
-                <Input
-                  id="balance"
-                  type="number"
-                  step="0.01"
-                  placeholder="e.g., 50000"
-                  value={formData.balance}
-                  onChange={(e) =>
-                    setFormData({ ...formData, balance: e.target.value })
-                  }
-                  required
-                  disabled={submitting}
-                />
+                <Label htmlFor="balance">Current Balance</Label>
+                <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 font-medium">LKR</span>
+                    <Input
+                    id="balance"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.balance}
+                    onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
+                    required
+                    className="pl-12 h-11 bg-zinc-50/50 border-zinc-200/60 text-lg font-medium"
+                    />
+                </div>
               </div>
+
             </ResponsiveModalBody>
 
-            <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6">
+            <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-6">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  setDialogOpen(false);
-                  setEditMode(false);
-                  setEditingId(null);
-                }}
+                onClick={handleCloseDialog}
                 disabled={submitting}
-                className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 border-zinc-300 hover:bg-zinc-100"
+                className="w-full sm:flex-1 h-11"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting} className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 bg-zinc-900 hover:bg-zinc-800 text-white">
-                {submitting ? (editMode ? 'Updating...' : 'Adding...') : (editMode ? 'Update Account' : 'Add Account')}
+              <Button type="submit" disabled={submitting} className="w-full sm:flex-1 h-11 bg-zinc-900 hover:bg-zinc-800">
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (editMode ? 'Update Card' : 'Create Card')}
               </Button>
             </ResponsiveModalFooter>
           </form>

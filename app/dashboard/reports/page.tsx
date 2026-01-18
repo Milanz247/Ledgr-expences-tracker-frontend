@@ -111,9 +111,30 @@ export default function ReportsPage() {
     }
   };
 
-  const handleExport = () => {
-    toast.info('Exporting report... (Feature coming soon)');
-    // Implementation for PDF/CSV generation would go here
+  const handleExport = async () => {
+    try {
+      const loadingToast = toast.loading('Generating transaction report...');
+      
+      const response = await api.get('/export/transactions', {
+        responseType: 'blob', // Important for file handling
+      });
+
+      // Create blob link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'Ledgr_Transaction_Report.csv'); // Fallback filename
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      link.remove();
+      toast.dismiss(loadingToast);
+      toast.success('Report downloaded successfully!');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export report');
+    }
   };
 
   if (loading) {
