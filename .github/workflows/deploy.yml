@@ -1,0 +1,49 @@
+name: Deploy to CloudPanel VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build (Verification)
+        run: npm run build
+
+      - name: Deploy to VPS
+        uses: easingthemes/ssh-deploy@v5.1.0
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ARGS: "-rlgoDzvc -i --delete"
+          SOURCE: "/"
+          REMOTE_HOST: ${{ secrets.HOST }}
+          REMOTE_USER: ${{ secrets.USERNAME }}
+          TARGET: ${{ secrets.TARGET_DIR }}
+          EXCLUDE: "/dist/, /node_modules/, /.git/, /.github/, /.next/"
+          SCRIPT_AFTER: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            cd ${{ secrets.TARGET_DIR }}
+            echo "Installing dependencies..."
+            npm ci
+            echo "Building application..."
+            npm run build
+            echo "Restarting application..."
+            # Adjust the restart command based on your CloudPanel setup.
+            # If utilizing CloudPanel's expected entry point 'npm start' usually just works if handled by PM2.
+            # Often standard PM2 is used:
+            pm2 restart all || npm start
