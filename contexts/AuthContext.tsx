@@ -63,8 +63,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (name: string, email: string, password: string, passwordConfirmation: string) => {
     try {
-      console.log('AuthContext: Starting registration with:', { name, email });
-
       const response = await api.post('/register', {
         name,
         email,
@@ -72,21 +70,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         password_confirmation: passwordConfirmation,
       });
 
-      console.log('AuthContext: Registration response:', response.data);
-
       const { token, user } = response.data;
 
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
 
-      console.log('AuthContext: Registration successful, redirecting to dashboard');
       router.push('/dashboard');
     } catch (error: any) {
-      console.error('AuthContext: Registration error:', error);
-      console.error('AuthContext: Error response:', error.response?.data);
-      console.error('AuthContext: Error status:', error.response?.status);
-
       // Get detailed error message
       let errorMessage = 'Registration failed';
 

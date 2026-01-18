@@ -35,17 +35,8 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      console.log('Registration attempt:', { name, email });
       await register(name, email, password, passwordConfirmation);
-      console.log('Registration successful');
     } catch (err: any) {
-      console.error('Registration error:', err);
-      console.error('Error details:', {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status
-      });
-
       const errorMessage = err.response?.data?.message
         || err.response?.data?.errors
         || err.message
