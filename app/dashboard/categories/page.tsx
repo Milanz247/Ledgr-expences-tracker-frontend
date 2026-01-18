@@ -168,25 +168,26 @@ export default function CategoriesPage() {
 
     return (
       <form onSubmit={handleSubmit} className="flex flex-col h-full">
-        <ResponsiveModalBody className="space-y-4">
-          {error && (
-            <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-sm border border-rose-200/60">
-              {error}
-            </div>
-          )}
+          <ResponsiveModalBody className="space-y-4 flex-1 overflow-y-auto min-h-0 px-4 sm:px-6">
+            {error && (
+              <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-sm border border-rose-200/60">
+                {error}
+              </div>
+            )}
 
-          {/* Category Name */}
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium text-zinc-700">Category Name</Label>
-            <Input
-              placeholder="e.g., Groceries"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              disabled={submitting}
-              className="h-11 bg-zinc-50/50 border-zinc-200/60"
-            />
-          </div>
+            {/* Category Name */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-zinc-700">Category Name</Label>
+              <Input
+                placeholder="e.g., Groceries"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                autoFocus
+                disabled={submitting}
+                className="h-11 bg-zinc-50/50 border-zinc-200/60"
+              />
+            </div>
 
           {/* Type Selection */}
           <div className="space-y-1.5">
@@ -311,7 +312,7 @@ export default function CategoriesPage() {
           </div>
         </ResponsiveModalBody>
 
-        <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6">
+        <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6 sticky bottom-0 z-10 w-full mb-safe">
           <Button
             type="button"
             variant="outline"
