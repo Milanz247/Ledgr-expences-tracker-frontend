@@ -1,6 +1,6 @@
 'use client';
 
-import { BankAccount } from '@/app/dashboard/bank-accounts/page';
+import { BankAccount } from '@/types';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Edit, MoreVertical, Trash2, Copy, Share2, Wallet, CreditCard, Layers } from 'lucide-react';

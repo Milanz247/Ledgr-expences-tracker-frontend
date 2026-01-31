@@ -27,16 +27,9 @@ import { Plus, Landmark, Loader2, Wallet, ArrowUpRight } from 'lucide-react';
 import BankCard from '@/components/BankCard';
 import { toast } from 'sonner';
 import CurrencyDisplay from '@/components/CurrencyDisplay';
+import { BankAccount } from '@/types';
 
-export interface BankAccount {
-  id: number;
-  bank_name: string;
-  account_number: string;
-  balance: number;
-  account_holder_name?: string;
-  branch_code?: string;
-  color?: string;
-}
+
 
 const SRI_LANKAN_BANKS = [
   'Bank of Ceylon',
