@@ -184,6 +184,7 @@ export default function CategoriesPage() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
                 disabled={submitting}
+                autoFocus
                 className="h-11 bg-zinc-50/50 border-zinc-200/60"
               />
             </div>
