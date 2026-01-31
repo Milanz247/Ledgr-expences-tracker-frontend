@@ -41,7 +41,7 @@ const menuItems = [
   { id: 'recurring', icon: RefreshCw, label: 'Recurring', href: '/dashboard/recurring' },
   { id: 'loans', icon: CreditCard, label: 'Loans', href: '/dashboard/loans' },
   { id: 'bank_accounts', icon: Landmark, label: 'Bank Accounts', href: '/dashboard/bank-accounts' },
-  { id: 'fund_sources', icon: Wallet, label: 'Cash & Wallets', href: '/dashboard/fund-sources' },
+  { id: 'fund_sources', icon: Wallet, label: 'Wallet', href: '/dashboard/fund-sources' },
   { id: 'installments', icon: Calendar, label: 'Installments', href: '/dashboard/installments' },
   { id: 'categories', icon: Tag, label: 'Categories', href: '/dashboard/categories' },
   { id: 'reports', icon: Calendar, label: 'Reports', href: '/dashboard/reports' }, // Added for consistency with settings

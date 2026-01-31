@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   ResponsiveModal,
   ResponsiveModalContent,
@@ -16,10 +15,15 @@ import {
   ResponsiveModalBody,
   ResponsiveModalFooter,
 } from '@/components/ui/responsive-modal';
-import { ConfirmModal } from '@/components/ui/confirm-modal';
-import { Plus, Wallet, Trash2, DollarSign, Edit, Loader2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Wallet, ArrowDownToLine, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
 
 interface FundSource {
   id: number;
@@ -29,28 +33,38 @@ interface FundSource {
   created_at: string;
 }
 
+interface BankAccount {
+  id: number;
+  bank_name: string;
+  account_number: string;
+  balance: number;
+}
+
 export default function FundSourcesPage() {
   const [sources, setSources] = useState<FundSource[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState({
-    source_name: '',
-    amount: '',
-    description: '',
-  });
-  const [error, setError] = useState('');
+  
+  // Withdraw Modal State
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [selectedBankId, setSelectedBankId] = useState<string>('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Confirm Modal
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-
   useEffect(() => {
-    fetchSources();
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([fetchSources(), fetchBankAccounts()]);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchSources = async () => {
     try {
@@ -59,73 +73,42 @@ export default function FundSourcesPage() {
       setSources(Array.isArray(sourcesData) ? sourcesData : []);
     } catch (error) {
       console.error('Failed to fetch fund sources:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSubmitting(true);
-
+  const fetchBankAccounts = async () => {
     try {
-      if (editMode && editingId) {
-        await api.put(`/fund-sources/${editingId}`, {
-          source_name: formData.source_name,
-          amount: parseFloat(formData.amount),
-          description: formData.description,
-        });
-      } else {
-        await api.post('/fund-sources', {
-          source_name: formData.source_name,
-          amount: parseFloat(formData.amount),
-          description: formData.description,
-        });
-      }
+      const response = await api.get('/bank-accounts');
+      const data = response.data?.data || response.data || [];
+      setBankAccounts(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to fetch bank accounts:', error);
+    }
+  };
 
-      await fetchSources();
-      setDialogOpen(false);
-      setEditMode(false);
-      setEditingId(null);
-      setFormData({ source_name: '', amount: '', description: '' });
-    } catch (err: any) {
-      setError(err.response?.data?.message || `Failed to ${editMode ? 'update' : 'create'} fund source`);
+  const handleWithdraw = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBankId || !withdrawAmount) return;
+
+    setSubmitting(true);
+    try {
+      await api.post('/fund-sources/withdraw', {
+        bank_account_id: parseInt(selectedBankId),
+        amount: parseFloat(withdrawAmount),
+      });
+
+      toast.success('Withdrawal successful');
+      setWithdrawOpen(false);
+      setSelectedBankId('');
+      setWithdrawAmount('');
+      
+      // Refresh data to show updated balances
+      await fetchData();
+    } catch (error: any) {
+      console.error('Withdrawal failed:', error);
+      toast.error(error.response?.data?.message || 'Withdrawal failed');
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleEdit = (source: FundSource) => {
-    setEditMode(true);
-    setEditingId(source.id);
-    setFormData({
-      source_name: source.source_name,
-      amount: source.amount.toString(),
-      description: source.description || '',
-    });
-    setDialogOpen(true);
-  };
-
-  const handleDeleteClick = (id: number) => {
-    setDeleteId(id);
-    setDeleteModalOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteId) return;
-    setIsDeleting(true);
-    try {
-      await api.delete(`/fund-sources/${deleteId}`);
-      await fetchSources();
-      setDeleteModalOpen(false);
-    } catch (error: any) {
-      console.error('Failed to delete fund source:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to delete fund source';
-      toast.error(errorMessage);
-    } finally {
-      setIsDeleting(false);
-      setDeleteId(null);
     }
   };
 
@@ -136,7 +119,7 @@ export default function FundSourcesPage() {
     }).format(amount);
   };
 
-  const getTotalIncome = () => {
+  const getTotalBalance = () => {
     return sources.reduce((sum, source) => sum + parseFloat(source.amount.toString()), 0);
   };
 
@@ -152,135 +135,64 @@ export default function FundSourcesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Cash & Wallets</h1>
-          <p className="text-slate-600 mt-1">Track your income and funding sources</p>
+          <h1 className="text-3xl font-bold text-slate-900">Wallet</h1>
+          <p className="text-slate-600 mt-1">Manage your wallet balance</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Fund Source
+        <Button onClick={() => setWithdrawOpen(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+          <ArrowDownToLine className="h-4 w-4 mr-2" />
+          Withdraw from Bank
         </Button>
       </div>
 
-      {/* Total Income Card */}
-      {sources.length > 0 && (
+      {/* Total Wallet Balance Card */}
+      {sources.length > 0 ? (
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
           <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-green-900 text-lg sm:text-xl">Total Income</CardTitle>
+            <CardTitle className="text-green-900 text-lg sm:text-xl">Total Wallet Balance</CardTitle>
             <CardDescription className="text-green-700 text-xs sm:text-sm">
-              All recorded cash & wallets
+              Current cash in hand
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
             <p className="text-3xl sm:text-4xl font-bold text-green-900">
-              {formatCurrency(getTotalIncome())}
+              {formatCurrency(getTotalBalance())}
             </p>
           </CardContent>
         </Card>
-      )}
-
-      {sources.length === 0 ? (
+      ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Wallet className="h-12 w-12 text-slate-400 mb-4" />
-            <p className="text-lg font-medium text-slate-900 mb-2">No cash wallets yet</p>
-            <p className="text-slate-600 mb-4">Add your first income source to get started</p>
-            <Button onClick={() => setDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Fund Source
-            </Button>
+            <p className="text-lg font-medium text-slate-900 mb-2">No wallet found</p>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {sources.map((source) => (
-            <Card key={source.id} className="hover:shadow-lg transition-shadow py-3 sm:py-6">
-              <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="bg-green-100 rounded-lg p-1.5 sm:p-2">
-                      <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base sm:text-lg">{source.source_name}</CardTitle>
-                      <CardDescription className="text-[10px] sm:text-xs">
-                        {format(new Date(source.created_at), 'MMM dd, yyyy')}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="px-3 sm:px-6">
-                <div className="space-y-3 sm:space-y-4">
-                  <div>
-                    <p className="text-xs sm:text-sm text-slate-600 mb-0.5 sm:mb-1">Amount</p>
-                    <p className="text-xl sm:text-2xl font-bold text-green-600">
-                      {formatCurrency(source.amount)}
-                    </p>
-                  </div>
-                  {source.description && (
-                    <div>
-                      <p className="text-xs sm:text-sm text-slate-600 mb-0.5 sm:mb-1">Description</p>
-                      <p className="text-xs sm:text-sm text-slate-900">{source.description}</p>
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 h-8 sm:h-9 text-xs sm:text-sm"
-                      onClick={() => handleEdit(source)}
-                    >
-                      <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 h-8 sm:h-9 text-xs sm:text-sm"
-                      onClick={() => handleDeleteClick(source.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       )}
 
-      {/* Add Fund Source Dialog */}
-      <ResponsiveModal open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Withdraw Modal */}
+      <ResponsiveModal open={withdrawOpen} onOpenChange={setWithdrawOpen}>
         <ResponsiveModalContent>
           <ResponsiveModalHeader>
-            <ResponsiveModalTitle>{editMode ? 'Edit' : 'Add'} Fund Source</ResponsiveModalTitle>
+            <ResponsiveModalTitle>Withdraw to Wallet</ResponsiveModalTitle>
             <ResponsiveModalDescription>
-              {editMode ? 'Update your' : 'Record a new'} income or funding source
+              Transfer money from a bank account to your wallet.
             </ResponsiveModalDescription>
           </ResponsiveModalHeader>
-          <form onSubmit={handleSubmit} className="flex flex-col h-full">
+          <form onSubmit={handleWithdraw}>
             <ResponsiveModalBody className="space-y-4">
-
-
-              {error && (
-                <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-                  {error}
-                </div>
-              )}
-
               <div className="space-y-2">
-                <Label htmlFor="source_name">Source Name</Label>
-                <Input
-                  id="source_name"
-                  placeholder="e.g., Monthly Salary, Freelance Project"
-                  value={formData.source_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, source_name: e.target.value })
-                  }
-                  required
-                  disabled={submitting}
-                />
+                <Label htmlFor="bank">Select Bank Account</Label>
+                <Select value={selectedBankId} onValueChange={setSelectedBankId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a bank account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bankAccounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id.toString()}>
+                        {account.bank_name} - {formatCurrency(parseFloat(account.balance.toString()))}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -289,66 +201,36 @@ export default function FundSourcesPage() {
                   id="amount"
                   type="number"
                   step="0.01"
-                  placeholder="e.g., 75000"
-                  value={formData.amount}
-                  onChange={(e) =>
-                    setFormData({ ...formData, amount: e.target.value })
-                  }
+                  placeholder="e.g. 5000"
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
                   required
-                  disabled={submitting}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="e.g., January 2026 Salary"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  disabled={submitting}
-                  rows={3}
                 />
               </div>
             </ResponsiveModalBody>
-
-            <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6">
-              <Button
+            <ResponsiveModalFooter>
+               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  setDialogOpen(false);
-                  setEditMode(false);
-                  setEditingId(null);
-                  setFormData({ source_name: '', amount: '', description: '' });
-                }}
+                onClick={() => setWithdrawOpen(false)}
                 disabled={submitting}
-                className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 border-zinc-300 hover:bg-zinc-100"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting} className="w-full sm:w-auto sm:flex-1 lg:flex-none h-12 lg:h-10 bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button type="submit" disabled={submitting || !selectedBankId || !withdrawAmount}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {editMode ? 'Updating...' : 'Adding...'}
+                    Processing...
                   </>
-                ) : (editMode ? 'Update Source' : 'Add Source')}
+                ) : (
+                  'Withdraw'
+                )}
               </Button>
             </ResponsiveModalFooter>
           </form>
         </ResponsiveModalContent>
       </ResponsiveModal>
-      <ConfirmModal
-        open={deleteModalOpen}
-        onOpenChange={setDeleteModalOpen}
-        title="Delete Fund Source?"
-        description="Are you sure you want to delete this fund source? This action cannot be undone."
-        onConfirm={handleConfirmDelete}
-        isLoading={isDeleting}
-      />
     </div>
   );
 }

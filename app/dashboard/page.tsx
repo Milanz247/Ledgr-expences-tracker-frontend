@@ -136,7 +136,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Cash & Wallets Card */}
+        {/* Wallet Card */}
         <Card className="group relative overflow-hidden border-zinc-200/60 bg-white/80 backdrop-blur-sm hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 hover:scale-[1.02] h-auto">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/80 via-transparent to-transparent opacity-60"></div>
           <CardContent className="relative py-3 px-3 lg:p-4 flex lg:flex-col items-start gap-2 lg:gap-0">
@@ -145,7 +145,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex-1 lg:mt-3">
               <CardTitle className="text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                Cash & Wallets
+                Wallet
               </CardTitle>
               <div className="text-base lg:text-2xl font-bold text-zinc-900 mt-0.5 lg:mt-1 tracking-tight">
                 {formatCurrency(stats.total_fund_balance)}

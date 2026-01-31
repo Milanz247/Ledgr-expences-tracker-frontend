@@ -419,7 +419,7 @@ export default function SettingsPage() {
                    { id: 'recurring', label: 'Recurring', icon: RefreshCw }, // Added
                    { id: 'loans', label: 'Loans', icon: Landmark },
                    { id: 'bank_accounts', label: 'Bank Accounts', icon: Landmark }, // Added
-                   { id: 'fund_sources', label: 'Cash & Wallets', icon: Wallet }, // Added
+                   { id: 'fund_sources', label: 'Wallet', icon: Wallet }, // Added
                    { id: 'installments', label: 'Installments', icon: CreditCard },
                    { id: 'categories', label: 'Categories', icon: LayoutDashboard }, // Added, checked icon import below
                    { id: 'reports', label: 'Reports', icon: FileBarChart },
