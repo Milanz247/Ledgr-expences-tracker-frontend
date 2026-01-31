@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
   ResponsiveModal,
@@ -26,9 +26,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
-import { Plus, HandCoins, Trash2, Edit, DollarSign, Loader2, AlertCircle, History, Clock } from 'lucide-react';
+import { Plus, HandCoins, Trash2, Edit, DollarSign, Loader2, AlertCircle, History, Clock, TrendingUp, Layers, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import CurrencyDisplay from '@/components/CurrencyDisplay';
 
 interface Loan {
   id: number;
@@ -91,7 +93,7 @@ export default function LoansPage() {
   const [repayData, setRepayData] = useState({
     amount: '',
     category_id: '',
-    payment_source: 'bank', // 'bank' or 'wallet'
+    payment_source: 'bank',
     bank_account_id: '',
     fund_source_id: '',
     date: new Date().toISOString().split('T')[0],
@@ -260,8 +262,18 @@ export default function LoansPage() {
       await fetchData();
       setDeleteModalOpen(false);
     } catch (error: any) {
-      console.error('Failed to delete loan:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete loan');
+      if (error.response?.status === 422) {
+        // Expected error for loans with history - just show toast, no console error
+        toast.error('Cannot Delete Loan', {
+          description: 'This loan has associated transaction history. Please delete the repayments specifically from the History view first.',
+          duration: 5000,
+        });
+      } else {
+        // Log unexpected errors
+        console.error('Failed to delete loan:', error);
+        toast.error(error.response?.data?.message || 'Failed to delete loan');
+      }
+      setDeleteModalOpen(false);
     } finally {
       setIsDeleting(false);
       setDeleteId(null);
@@ -321,13 +333,6 @@ export default function LoansPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'LKR',
-    }).format(amount);
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
@@ -344,7 +349,7 @@ export default function LoansPage() {
       case 'paid':
         return 'Paid';
       case 'partially_paid':
-        return 'Partially Paid';
+        return 'Partial';
       default:
         return 'Unpaid';
     }
@@ -361,529 +366,543 @@ export default function LoansPage() {
     return loans.filter(l => l.status === status);
   };
 
-  const renderLoanCard = (loan: Loan) => {
-    const paymentPercentage = getPaymentPercentage(loan);
-
-    return (
-      <Card key={loan.id} className="hover:shadow-md transition-shadow">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2">
-              <div className="bg-red-100 rounded-lg p-2">
-                <HandCoins className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <CardTitle className="text-base">{loan.lender_name}</CardTitle>
-                <CardDescription className="text-xs">
-                  {format(new Date(loan.created_at), 'MMM dd, yyyy')}
-                </CardDescription>
-              </div>
-            </div>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(loan.status)}`}>
-              {getStatusText(loan.status)}
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-xs text-slate-600 mb-1">Original Amount</p>
-              <p className="text-sm font-bold text-slate-900">
-                {formatCurrency(loan.amount)}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs text-slate-600 mb-1">Balance Remaining</p>
-              <p className="text-sm font-bold text-red-600">
-                {formatCurrency(loan.balance_remaining)}
-              </p>
-            </div>
-          </div>
-
-          {loan.status === 'partially_paid' && (
-            <div>
-              <div className="flex justify-between text-xs text-slate-600 mb-1">
-                <span>Payment Progress</span>
-                <span className="font-medium">{paymentPercentage}%</span>
-              </div>
-              <Progress value={paymentPercentage} className="h-2" />
-            </div>
-          )}
-
-          {loan.due_date && (
-            <div>
-              <p className="text-xs text-slate-600 mb-1">Due Date</p>
-              <p className="text-xs text-slate-900">
-                {format(new Date(loan.due_date), 'MMM dd, yyyy')}
-              </p>
-            </div>
-          )}
-
-          {loan.description && (
-            <div>
-              <p className="text-xs text-slate-600 mb-1">Description</p>
-              <p className="text-xs text-slate-900">{loan.description}</p>
-            </div>
-          )}
-
-          <div className="flex gap-2 pt-2">
-            {loan.status !== 'paid' && (
-              <Button
-                variant="default"
-                size="sm"
-                className="flex-1"
-                onClick={() => handleRepayClick(loan)}
-              >
-                <DollarSign className="h-3 w-3 mr-1" />
-                Repay
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleHistoryClick(loan)}
-            >
-              <History className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleEdit(loan)}
-            >
-              <Edit className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDeleteClick(loan.id)}
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900"></div>
       </div>
     );
   }
 
+  const activeLoans = filterLoansByStatus('active');
+  const paidLoans = filterLoansByStatus('paid');
+  const avgBalance = activeLoans.length > 0 ? activeLoans.reduce((sum, l) => sum + l.balance_remaining, 0) / activeLoans.length : 0;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Loans</h1>
-          <p className="text-slate-600 mt-1">Track and manage your debts</p>
+    <div className="min-h-screen bg-zinc-50/50 pb-20 animate-in fade-in duration-500">
+      <div className="max-w-[1920px] mx-auto p-4 lg:p-6 space-y-8">
+        
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight flex items-center gap-2">
+            <HandCoins className="h-6 w-6 text-zinc-400" />
+            Loans Hub
+          </h1>
+          <Button onClick={() => setDialogOpen(true)} className="bg-zinc-900 hover:bg-zinc-800 text-white shadow-lg shadow-zinc-900/10">
+            <Plus className="h-4 w-4 mr-2" />
+            New Loan
+          </Button>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Loan
-        </Button>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="space-y-4">
-        <Card className="bg-gradient-to-br from-red-50 to-orange-50 border-red-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-red-900">Total Debt</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-900">
-              {formatCurrency(stats.total_debt)}
+        {/* Micro-Metrics Bento Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          {/* Total Debt */}
+          <div className="bg-white border border-zinc-200/60 rounded-xl p-4 flex flex-col justify-between h-[100px]">
+            <div className="flex items-center gap-2 text-zinc-500">
+              <TrendingUp className="h-3.5 w-3.5 text-rose-500" />
+              <span className="text-[10px] uppercase font-bold tracking-wider text-rose-500/80">Total Debt</span>
             </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-2 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-700">Active Loans</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-900">{stats.active_loans}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-700">Paid Loans</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.paid_loans}</div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Tabs for filtering */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="paid">Paid</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="active" className="mt-6">
-          {filterLoansByStatus('active').length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <HandCoins className="h-12 w-12 text-slate-400 mb-4" />
-                <p className="text-lg font-medium text-slate-900 mb-2">No active loans</p>
-                <p className="text-slate-600 mb-4">Add a loan to start tracking</p>
-                <Button onClick={() => setDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Loan
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filterLoansByStatus('active').map(renderLoanCard)}
+            <div className="text-2xl font-bold text-rose-600 font-mono tracking-tight">
+              <CurrencyDisplay amount={stats.total_debt} />
             </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="paid" className="mt-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filterLoansByStatus('paid').map(renderLoanCard)}
           </div>
-          {filterLoansByStatus('paid').length === 0 && (
-            <Card>
-              <CardContent className="py-12 text-center text-slate-600">
-                No paid loans yet
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
 
-      {/* Add/Edit Loan Modal */}
-      <ResponsiveModal open={dialogOpen} onOpenChange={setDialogOpen}>
-        <ResponsiveModalContent>
-          <ResponsiveModalHeader>
-            <ResponsiveModalTitle>{editMode ? 'Edit' : 'Add'} Loan</ResponsiveModalTitle>
-            <ResponsiveModalDescription>
-              {editMode ? 'Update the' : 'Add a new'} loan details
-            </ResponsiveModalDescription>
-          </ResponsiveModalHeader>
-          <form onSubmit={handleSubmit}>
-            <ResponsiveModalBody className="space-y-4">
-              {error && (
-                <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
-                  {error}
-                </div>
+          {/* Active Loans */}
+          <div className="bg-white border border-zinc-200/60 rounded-xl p-4 flex flex-col justify-between h-[100px]">
+            <div className="flex items-center gap-2 text-zinc-500">
+              <Layers className="h-3.5 w-3.5" />
+              <span className="text-[10px] uppercase font-bold tracking-wider">Active Loans</span>
+            </div>
+            <div className="text-2xl font-bold text-zinc-900 font-mono tracking-tight">{stats.active_loans}</div>
+          </div>
+
+          {/* Paid Loans */}
+          <div className="bg-white border border-zinc-200/60 rounded-xl p-4 flex flex-col justify-between h-[100px]">
+            <div className="flex items-center gap-2 text-zinc-500">
+              <Activity className="h-3.5 w-3.5 text-green-500" />
+              <span className="text-[10px] uppercase font-bold tracking-wider text-green-500/80">Paid Loans</span>
+            </div>
+            <div className="text-2xl font-bold text-green-600 font-mono tracking-tight">{stats.paid_loans}</div>
+          </div>
+
+          {/* Average Balance */}
+          <div className="bg-zinc-100/50 border border-zinc-200/60 rounded-xl p-4 flex flex-col justify-between h-[100px]">
+            <div className="flex items-center gap-2 text-zinc-400">
+              <DollarSign className="h-3.5 w-3.5" />
+              <span className="text-[10px] uppercase font-bold tracking-wider">Avg Balance</span>
+            </div>
+            <div className="text-2xl font-bold text-zinc-400 font-mono tracking-tight">
+              <CurrencyDisplay amount={avgBalance} />
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex items-center gap-6 border-b border-zinc-200/60 px-1">
+          {['active', 'paid'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                "pb-3 text-xs font-bold uppercase tracking-wider transition-all",
+                activeTab === tab ? "text-zinc-900 border-b-2 border-zinc-900" : "text-zinc-400 hover:text-zinc-600"
               )}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="lender_name">Lender Name</Label>
-                <Input
-                  id="lender_name"
-                  placeholder="e.g., Bank, Friend, Family"
-                  value={formData.lender_name}
-                  onChange={(e) => setFormData({ ...formData, lender_name: e.target.value })}
-                  required
-                  disabled={submitting}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="e.g., 100000"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  required
-                  disabled={submitting}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="due_date">Due Date (Optional)</Label>
-                <Input
-                  id="due_date"
-                  type="date"
-                  value={formData.due_date}
-                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                  disabled={submitting}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="e.g., Personal loan for car"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  disabled={submitting}
-                  rows={3}
-                />
-              </div>
-            </ResponsiveModalBody>
-
-            <ResponsiveModalFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setDialogOpen(false);
-                  setEditMode(false);
-                  setEditingId(null);
-                  setFormData({ lender_name: '', amount: '', description: '', due_date: '' });
-                }}
-                disabled={submitting}
-                className="w-full lg:w-auto"
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={submitting} className="w-full lg:w-auto">
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {editMode ? 'Updating...' : 'Adding...'}
-                  </>
-                ) : (
-                  editMode ? 'Update Loan' : 'Add Loan'
-                )}
-              </Button>
-            </ResponsiveModalFooter>
-          </form>
-        </ResponsiveModalContent>
-      </ResponsiveModal>
-
-      {/* Repay Modal */}
-      <ResponsiveModal open={repayOpen} onOpenChange={setRepayOpen}>
-        <ResponsiveModalContent>
-          <ResponsiveModalHeader>
-            <ResponsiveModalTitle>Repay Loan</ResponsiveModalTitle>
-            <ResponsiveModalDescription>
-              Make a repayment to {repayingLoan?.lender_name}
-            </ResponsiveModalDescription>
-          </ResponsiveModalHeader>
-          <form onSubmit={handleRepaySubmit}>
-            <ResponsiveModalBody className="space-y-4">
-              {repayingLoan && (
-                <div className="bg-blue-50 p-3 rounded-md">
-                  <p className="text-sm text-blue-900">
-                    Balance Remaining: <strong>{formatCurrency(repayingLoan.balance_remaining)}</strong>
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="repay_amount">Amount</Label>
-                <Input
-                  id="repay_amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="Enter amount"
-                  value={repayData.amount}
-                  onChange={(e) => setRepayData({ ...repayData, amount: e.target.value })}
-                  required
-                  disabled={submitting}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select
-                  value={repayData.category_id}
-                  onValueChange={(value) => setRepayData({ ...repayData, category_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id.toString()}>
-                        {cat.icon} {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Payment Source</Label>
-                <Select
-                  value={repayData.payment_source}
-                  onValueChange={(value) =>
-                    setRepayData({ ...repayData, payment_source: value, bank_account_id: '', fund_source_id: '' })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bank">Bank Account</SelectItem>
-                    <SelectItem value="wallet">Wallet</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {repayData.payment_source === 'bank' && (
-                <div className="space-y-2">
-                  <Label>Bank Account</Label>
-                  <Select
-                    value={repayData.bank_account_id}
-                    onValueChange={(value) => setRepayData({ ...repayData, bank_account_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select bank account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {bankAccounts.map((acc) => (
-                        <SelectItem key={acc.id} value={acc.id.toString()}>
-                          {acc.bank_name} - {formatCurrency(parseFloat(acc.balance.toString()))}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {repayData.payment_source === 'wallet' && (
-                <div className="space-y-2">
-                  <Label>Wallet</Label>
-                  <Select
-                    value={repayData.fund_source_id}
-                    onValueChange={(value) => setRepayData({ ...repayData, fund_source_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select wallet" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {fundSources.map((source) => (
-                        <SelectItem key={source.id} value={source.id.toString()}>
-                          {source.source_name} - {formatCurrency(parseFloat(source.amount.toString()))}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="repay_date">Date</Label>
-                <Input
-                  id="repay_date"
-                  type="date"
-                  value={repayData.date}
-                  onChange={(e) => setRepayData({ ...repayData, date: e.target.value })}
-                  required
-                  disabled={submitting}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="repay_description">Description (Optional)</Label>
-                <Textarea
-                  id="repay_description"
-                  placeholder="Add note"
-                  value={repayData.description}
-                  onChange={(e) => setRepayData({ ...repayData, description: e.target.value })}
-                  disabled={submitting}
-                  rows={2}
-                />
-              </div>
-            </ResponsiveModalBody>
-
-            <ResponsiveModalFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setRepayOpen(false)}
-                disabled={submitting}
-                className="w-full lg:w-auto"
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={submitting} className="w-full lg:w-auto">
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  'Record Repayment'
-                )}
-              </Button>
-            </ResponsiveModalFooter>
-          </form>
-        </ResponsiveModalContent>
-      </ResponsiveModal>
-
-      {/* History Modal */}
-      <ResponsiveModal open={historyOpen} onOpenChange={setHistoryOpen}>
-        <ResponsiveModalContent>
-          <ResponsiveModalHeader>
-            <ResponsiveModalTitle>Loan History</ResponsiveModalTitle>
-            <ResponsiveModalDescription>
-              Payment history for {selectedLoan?.lender_name}
-            </ResponsiveModalDescription>
-          </ResponsiveModalHeader>
-          <ResponsiveModalBody>
-            {loadingHistory ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : repayments.length === 0 ? (
-              <div className="text-center py-8 text-slate-600">
-                <Clock className="h-12 w-12 mx-auto mb-3 text-slate-400" />
-                <p>No payment history yet</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {repayments.map((repayment) => (
-                  <div
-                    key={repayment.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium text-slate-900">
-                        {formatCurrency(repayment.amount)}
-                      </p>
-                      <p className="text-xs text-slate-600 mt-1">
-                        {format(new Date(repayment.payment_date), 'MMM dd, yyyy')}
-                      </p>
-                      {repayment.description && (
-                        <p className="text-xs text-slate-500 mt-1">{repayment.description}</p>
-                      )}
-                    </div>
-                    <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                      <DollarSign className="h-4 w-4 text-green-600" />
+        {/* Loan Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filterLoansByStatus(activeTab).length === 0 ? (
+            <div className="col-span-full py-12 flex flex-col items-center justify-center text-zinc-400 border-2 border-dashed border-zinc-200 rounded-xl bg-zinc-50/50">
+              <HandCoins className="h-10 w-10 mb-3 opacity-20" />
+              <p className="text-sm font-medium">No {activeTab} loans</p>
+            </div>
+          ) : (
+            filterLoansByStatus(activeTab).map((loan) => {
+              const paymentPercentage = getPaymentPercentage(loan);
+              
+              return (
+                <div key={loan.id} className="group relative bg-white border border-zinc-200/60 rounded-xl p-5 hover:border-zinc-300 hover:shadow-lg hover:shadow-zinc-200/50 transition-all duration-300">
+                  {/* Header */}
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-500">
+                        <HandCoins className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-zinc-900 leading-tight">{loan.lender_name}</h3>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-zinc-200 text-zinc-500 uppercase tracking-wider">
+                            {getStatusText(loan.status)}
+                          </Badge>
+                          {loan.due_date && (
+                            <span className="text-[10px] text-zinc-400">
+                              Due {format(new Date(loan.due_date), 'MMM dd')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </ResponsiveModalBody>
-          <ResponsiveModalFooter>
-            <Button variant="outline" onClick={() => setHistoryOpen(false)} className="w-full lg:w-auto">
-              Close
-            </Button>
-          </ResponsiveModalFooter>
-        </ResponsiveModalContent>
-      </ResponsiveModal>
 
-      {/* Delete Confirmation Modal */}
-      <ConfirmModal
-        open={deleteModalOpen}
-        onOpenChange={setDeleteModalOpen}
-        title="Delete Loan?"
-        description="Are you sure you want to delete this loan? This action cannot be undone."
-        onConfirm={handleConfirmDelete}
-        isLoading={isDeleting}
-      />
+                  {/* Data Grid */}
+                  <div className="grid grid-cols-2 gap-y-3 gap-x-4 border-t border-zinc-100 pt-3">
+                    <div>
+                      <p className="text-[9px] text-zinc-400 uppercase tracking-widest font-semibold mb-0.5">Amount</p>
+                      <p className="text-sm font-bold text-zinc-900 font-mono">
+                        <CurrencyDisplay amount={loan.amount} />
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] text-zinc-400 uppercase tracking-widest font-semibold mb-0.5">Balance</p>
+                      <p className="text-sm font-bold text-rose-600 font-mono">
+                        <CurrencyDisplay amount={loan.balance_remaining} />
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  {loan.status === 'partially_paid' && (
+                    <div className="mt-3 pt-3 border-t border-zinc-100">
+                      <div className="flex justify-between text-[9px] text-zinc-400 uppercase tracking-widest mb-1.5">
+                        <span>Progress</span>
+                        <span className="font-bold text-zinc-600">{paymentPercentage}%</span>
+                      </div>
+                      <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-zinc-900 rounded-full transition-all duration-500" 
+                          style={{width: `${paymentPercentage}%`}} 
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  {loan.description && (
+                    <div className="mt-3 pt-3 border-t border-zinc-100">
+                      <p className="text-[9px] text-zinc-400 uppercase tracking-widest font-semibold mb-1">Note</p>
+                      <p className="text-xs text-zinc-600 line-clamp-2">{loan.description}</p>
+                    </div>
+                  )}
+
+                  {/* Hover Actions */}
+                  <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200">
+                    {loan.status !== 'paid' && (
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-7 w-7 text-zinc-400 hover:text-green-600 hover:bg-green-50" 
+                        onClick={() => handleRepayClick(loan)}
+                        title="Repay"
+                      >
+                        <DollarSign className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-7 w-7 text-zinc-400 hover:text-blue-600 hover:bg-blue-50" 
+                      onClick={() => handleHistoryClick(loan)}
+                      title="History"
+                    >
+                      <History className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-7 w-7 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50" 
+                      onClick={() => handleEdit(loan)}
+                      title="Edit"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-7 w-7 text-zinc-400 hover:text-rose-600 hover:bg-rose-50" 
+                      onClick={() => handleDeleteClick(loan.id)}
+                      title="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Add/Edit Loan Modal */}
+        <ResponsiveModal open={dialogOpen} onOpenChange={setDialogOpen}>
+          <ResponsiveModalContent>
+            <ResponsiveModalHeader>
+              <ResponsiveModalTitle>{editMode ? 'Edit Loan' : 'New Loan'}</ResponsiveModalTitle>
+              <ResponsiveModalDescription>
+                {editMode ? 'Update loan details' : 'Add a new loan to track'}
+              </ResponsiveModalDescription>
+            </ResponsiveModalHeader>
+            <form onSubmit={handleSubmit} className="flex flex-col h-full">
+              <ResponsiveModalBody className="space-y-3">
+                {error && (
+                  <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    {error}
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Lender Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Bank, Friend, Family"
+                    value={formData.lender_name}
+                    onChange={(e) => setFormData({ ...formData, lender_name: e.target.value })}
+                    required
+                    disabled={submitting}
+                    className="w-full h-10 px-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Amount</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      required
+                      disabled={submitting}
+                      className="w-full h-10 px-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm font-mono"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Due Date</label>
+                    <input
+                      type="date"
+                      value={formData.due_date}
+                      onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                      disabled={submitting}
+                      className="w-full h-10 px-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Description (Optional)</label>
+                  <textarea
+                    placeholder="Add note"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    disabled={submitting}
+                    rows={3}
+                    className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-zinc-900 resize-none"
+                  />
+                </div>
+              </ResponsiveModalBody>
+
+              <ResponsiveModalFooter className="flex flex-row gap-3 p-4 sm:p-6 bg-zinc-50/50 border-t border-zinc-200">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setDialogOpen(false);
+                    setEditMode(false);
+                    setEditingId(null);
+                    setFormData({ lender_name: '', amount: '', description: '', due_date: '' });
+                  }}
+                  disabled={submitting}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={submitting} className="flex-1 bg-zinc-900 text-white hover:bg-zinc-800">
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {editMode ? 'Updating...' : 'Adding...'}
+                    </>
+                  ) : (
+                    editMode ? 'Update' : 'Create'
+                  )}
+                </Button>
+              </ResponsiveModalFooter>
+            </form>
+          </ResponsiveModalContent>
+        </ResponsiveModal>
+
+        {/* Repay Modal */}
+        <ResponsiveModal open={repayOpen} onOpenChange={setRepayOpen}>
+          <ResponsiveModalContent>
+            <ResponsiveModalHeader>
+              <ResponsiveModalTitle>Repay Loan</ResponsiveModalTitle>
+              <ResponsiveModalDescription>
+                Make a repayment to {repayingLoan?.lender_name}
+              </ResponsiveModalDescription>
+            </ResponsiveModalHeader>
+            <form onSubmit={handleRepaySubmit} className="flex flex-col h-full">
+              <ResponsiveModalBody className="space-y-3">
+                {repayingLoan && (
+                  <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                    <p className="text-sm text-blue-900">
+                      Balance: <strong className="font-mono"><CurrencyDisplay amount={repayingLoan.balance_remaining} /></strong>
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Amount</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={repayData.amount}
+                      onChange={(e) => setRepayData({ ...repayData, amount: e.target.value })}
+                      required
+                      disabled={submitting}
+                      className="w-full h-10 px-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm font-mono"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Date</label>
+                    <input
+                      type="date"
+                      value={repayData.date}
+                      onChange={(e) => setRepayData({ ...repayData, date: e.target.value })}
+                      required
+                      disabled={submitting}
+                      className="w-full h-10 px-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Category</label>
+                  <Select
+                    value={repayData.category_id}
+                    onValueChange={(value) => setRepayData({ ...repayData, category_id: value })}
+                  >
+                    <SelectTrigger className="w-full bg-zinc-50 border-zinc-200 h-10">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id.toString()}>
+                          {cat.icon} {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Payment Source</label>
+                  <Select
+                    value={repayData.payment_source}
+                    onValueChange={(value) =>
+                      setRepayData({ ...repayData, payment_source: value, bank_account_id: '', fund_source_id: '' })
+                    }
+                  >
+                    <SelectTrigger className="w-full bg-zinc-50 border-zinc-200 h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bank">Bank Account</SelectItem>
+                      <SelectItem value="wallet">Wallet</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {repayData.payment_source === 'bank' && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Bank Account</label>
+                    <Select
+                      value={repayData.bank_account_id}
+                      onValueChange={(value) => setRepayData({ ...repayData, bank_account_id: value })}
+                    >
+                      <SelectTrigger className="w-full bg-zinc-50 border-zinc-200 h-10">
+                        <SelectValue placeholder="Select account" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {bankAccounts.map((acc) => (
+                          <SelectItem key={acc.id} value={acc.id.toString()}>
+                            {acc.bank_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {repayData.payment_source === 'wallet' && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Wallet</label>
+                    <Select
+                      value={repayData.fund_source_id}
+                      onValueChange={(value) => setRepayData({ ...repayData, fund_source_id: value })}
+                    >
+                      <SelectTrigger className="w-full bg-zinc-50 border-zinc-200 h-10">
+                        <SelectValue placeholder="Select wallet" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fundSources.map((source) => (
+                          <SelectItem key={source.id} value={source.id.toString()}>
+                            {source.source_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Note (Optional)</label>
+                  <textarea
+                    placeholder="Add note"
+                    value={repayData.description}
+                    onChange={(e) => setRepayData({ ...repayData, description: e.target.value })}
+                    disabled={submitting}
+                    rows={2}
+                    className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-zinc-900 resize-none"
+                  />
+                </div>
+              </ResponsiveModalBody>
+
+              <ResponsiveModalFooter className="flex flex-row gap-3 p-4 sm:p-6 bg-zinc-50/50 border-t border-zinc-200">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setRepayOpen(false)}
+                  disabled={submitting}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={submitting} className="flex-1 bg-zinc-900 text-white hover:bg-zinc-800">
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Record Repayment'
+                  )}
+                </Button>
+              </ResponsiveModalFooter>
+            </form>
+          </ResponsiveModalContent>
+        </ResponsiveModal>
+
+        {/* History Modal */}
+        <ResponsiveModal open={historyOpen} onOpenChange={setHistoryOpen}>
+          <ResponsiveModalContent>
+            <ResponsiveModalHeader>
+              <ResponsiveModalTitle>Loan History</ResponsiveModalTitle>
+              <ResponsiveModalDescription>
+                Payment history for {selectedLoan?.lender_name}
+              </ResponsiveModalDescription>
+            </ResponsiveModalHeader>
+            <ResponsiveModalBody>
+              {loadingHistory ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+                </div>
+              ) : repayments.length === 0 ? (
+                <div className="text-center py-8 text-zinc-400">
+                  <Clock className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                  <p className="text-sm font-medium">No payment history yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {repayments.map((repayment) => (
+                    <div
+                      key={repayment.id}
+                      className="flex items-center justify-between p-3 bg-zinc-50 border border-zinc-100 rounded-lg hover:bg-zinc-100 transition-colors"
+                    >
+                      <div>
+                        <p className="font-bold text-zinc-900 font-mono text-sm">
+                          <CurrencyDisplay amount={repayment.amount} />
+                        </p>
+                        <p className="text-xs text-zinc-500 mt-0.5">
+                          {format(new Date(repayment.payment_date), 'MMM dd, yyyy')}
+                        </p>
+                        {repayment.description && (
+                          <p className="text-xs text-zinc-400 mt-1">{repayment.description}</p>
+                        )}
+                      </div>
+                      <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ResponsiveModalBody>
+            <ResponsiveModalFooter className="flex flex-row gap-3 p-4 sm:p-6 bg-zinc-50/50 border-t border-zinc-200">
+              <Button variant="outline" onClick={() => setHistoryOpen(false)} className="flex-1">
+                Close
+              </Button>
+            </ResponsiveModalFooter>
+          </ResponsiveModalContent>
+        </ResponsiveModal>
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+          title="Delete Loan?"
+          description="This will permanently remove this loan. This action cannot be undone."
+          onConfirm={handleConfirmDelete}
+          isLoading={isDeleting}
+        />
+      </div>
     </div>
   );
 }
