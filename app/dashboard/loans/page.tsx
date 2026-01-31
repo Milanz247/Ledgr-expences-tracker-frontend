@@ -641,10 +641,11 @@ export default function LoansPage() {
                   setFormData({ lender_name: '', amount: '', description: '', due_date: '' });
                 }}
                 disabled={submitting}
+                className="w-full lg:w-auto"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting} className="w-full lg:w-auto">
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -802,10 +803,11 @@ export default function LoansPage() {
                 variant="outline"
                 onClick={() => setRepayOpen(false)}
                 disabled={submitting}
+                className="w-full lg:w-auto"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting} className="w-full lg:w-auto">
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -866,7 +868,7 @@ export default function LoansPage() {
             )}
           </ResponsiveModalBody>
           <ResponsiveModalFooter>
-            <Button variant="outline" onClick={() => setHistoryOpen(false)}>
+            <Button variant="outline" onClick={() => setHistoryOpen(false)} className="w-full lg:w-auto">
               Close
             </Button>
           </ResponsiveModalFooter>

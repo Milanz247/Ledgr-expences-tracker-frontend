@@ -128,7 +128,7 @@ export function ResponsiveModalHeader({
     return <DialogHeader className={className}>{children}</DialogHeader>;
   }
 
-  return <DrawerHeader className={className}>{children}</DrawerHeader>;
+  return <DrawerHeader className={cn('px-4 pt-4 pb-2', className)}>{children}</DrawerHeader>;
 }
 
 export function ResponsiveModalTitle({
@@ -182,7 +182,7 @@ export function ResponsiveModalBody({
   }
 
   return (
-    <DrawerBody className={cn('pb-safe overflow-y-auto', className)}>{children}</DrawerBody>
+    <DrawerBody className={cn('pb-safe overflow-y-auto px-4 py-3', className)}>{children}</DrawerBody>
   );
 }
 
@@ -197,7 +197,7 @@ export function ResponsiveModalFooter({
   }
 
   return (
-    <DrawerFooter className={cn('pb-safe', className)}>{children}</DrawerFooter>
+    <DrawerFooter className={cn('pb-safe px-4 pt-3 pb-4 flex flex-col gap-2', className)}>{children}</DrawerFooter>
   );
 }
 
