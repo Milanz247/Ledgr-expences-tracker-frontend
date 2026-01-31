@@ -162,188 +162,6 @@ export default function CategoriesPage() {
   const expenseCount = categories.filter((c) => c.type === 'expense').length;
   const incomeCount = categories.filter((c) => c.type === 'income').length;
 
-  // Form Component
-  const CategoryForm = () => {
-    const IconComponent = getIconComponent(formData.icon);
-
-    return (
-      <form onSubmit={handleSubmit} className="flex flex-col h-full">
-          <ResponsiveModalBody className="space-y-4">
-            {error && (
-              <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-sm border border-rose-200/60">
-                {error}
-              </div>
-            )}
-
-            {/* Category Name */}
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-zinc-700">Category Name</Label>
-              <Input
-                placeholder="e.g., Groceries"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-                disabled={submitting}
-                autoFocus
-                className="h-11 bg-zinc-50/50 border-zinc-200/60"
-              />
-            </div>
-
-          {/* Type Selection */}
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium text-zinc-700">Type</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant={formData.type === 'expense' ? 'default' : 'outline'}
-                onClick={() => setFormData({ ...formData, type: 'expense' })}
-                disabled={submitting}
-                className={cn(
-                  'h-11',
-                  formData.type === 'expense' && 'bg-rose-600 hover:bg-rose-700'
-                )}
-              >
-                <TrendingDown className="h-4 w-4 mr-2" />
-                Expense
-              </Button>
-              <Button
-                type="button"
-                variant={formData.type === 'income' ? 'default' : 'outline'}
-                onClick={() => setFormData({ ...formData, type: 'income' })}
-                disabled={submitting}
-                className={cn(
-                  'h-11',
-                  formData.type === 'income' && 'bg-emerald-600 hover:bg-emerald-700'
-                )}
-              >
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Income
-              </Button>
-            </div>
-          </div>
-
-          {/* Icon Preview & Color */}
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium text-zinc-700">Preview</Label>
-            <div className="flex items-center gap-3 p-3 border border-zinc-200/60 rounded-xl bg-zinc-50/50">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: formData.color }}
-              >
-                <IconComponent className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <p className="font-medium text-zinc-900">{formData.name || 'Category Name'}</p>
-                <p className="text-xs text-zinc-500 capitalize">{formData.type} category</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Icon Picker */}
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium text-zinc-700">Icon</Label>
-            <div className="grid grid-cols-8 gap-1.5 max-h-32 overflow-y-auto p-2 border border-zinc-200/60 rounded-xl bg-white">
-              {CATEGORY_ICONS.map((icon) => {
-                const Icon = getIconComponent(icon.name);
-                const isSelected = formData.icon === icon.name;
-                return (
-                  <button
-                    key={icon.name}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, icon: icon.name })}
-                    disabled={submitting}
-                    className={cn(
-                      'relative p-2 rounded-lg flex items-center justify-center transition-all',
-                      isSelected
-                        ? 'bg-zinc-900 text-white'
-                        : 'bg-zinc-100/50 hover:bg-zinc-200/80 text-zinc-600'
-                    )}
-                    title={icon.label}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Color Picker */}
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium text-zinc-700">Color</Label>
-            <div className="grid grid-cols-8 gap-1.5">
-              {PRESET_COLORS.map((color) => {
-                const isSelected = formData.color === color;
-                return (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, color })}
-                    disabled={submitting}
-                    className={cn(
-                      'relative h-8 rounded-lg transition-all',
-                      isSelected ? 'ring-2 ring-offset-2 ring-zinc-900' : 'hover:scale-110'
-                    )}
-                    style={{ backgroundColor: color }}
-                  >
-                    {isSelected && (
-                      <Check className="h-4 w-4 text-white absolute inset-0 m-auto" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex items-center gap-2 mt-2">
-              <Input
-                type="color"
-                value={formData.color}
-                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                disabled={submitting}
-                className="w-14 h-9 p-1 cursor-pointer"
-              />
-              <Input
-                type="text"
-                value={formData.color}
-                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                disabled={submitting}
-                placeholder="#3b82f6"
-                className="flex-1 h-9 font-mono text-sm bg-zinc-50/50 border-zinc-200/60"
-              />
-            </div>
-          </div>
-        </ResponsiveModalBody>
-
-        <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6 w-full shrink-0">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCloseDialog}
-            disabled={submitting}
-            className="h-11 w-full sm:flex-1 text-base rounded-xl border-zinc-200/60 hover:bg-zinc-100 hover:text-zinc-900 order-2 sm:order-1"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={submitting}
-            className="h-11 w-full sm:flex-1 bg-zinc-900 hover:bg-zinc-800 text-white text-base rounded-xl shadow-lg shadow-zinc-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] order-1 sm:order-2"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Check className="mr-2 h-5 w-5" />
-                {editingCategory ? 'Update Category' : 'Create Category'}
-              </>
-            )}
-          </Button>
-        </ResponsiveModalFooter>
-      </form>
-    );
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -627,7 +445,185 @@ export default function CategoriesPage() {
               {editingCategory ? 'Update category details' : 'Create a new category for your transactions'}
             </ResponsiveModalDescription>
           </ResponsiveModalHeader>
-          <CategoryForm />
+
+          <form onSubmit={handleSubmit} className="flex flex-col h-full">
+            <ResponsiveModalBody className="space-y-4">
+              {error && (
+                <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-sm border border-rose-200/60">
+                  {error}
+                </div>
+              )}
+
+              {/* Category Name */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-zinc-700">Category Name</Label>
+                <Input
+                  placeholder="e.g., Groceries"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  disabled={submitting}
+                  autoFocus
+                  className="h-11 bg-zinc-50/50 border-zinc-200/60"
+                />
+              </div>
+
+              {/* Type Selection */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-zinc-700">Type</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={formData.type === 'expense' ? 'default' : 'outline'}
+                    onClick={() => setFormData({ ...formData, type: 'expense' })}
+                    disabled={submitting}
+                    className={cn(
+                      'h-11',
+                      formData.type === 'expense' && 'bg-rose-600 hover:bg-rose-700'
+                    )}
+                  >
+                    <TrendingDown className="h-4 w-4 mr-2" />
+                    Expense
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={formData.type === 'income' ? 'default' : 'outline'}
+                    onClick={() => setFormData({ ...formData, type: 'income' })}
+                    disabled={submitting}
+                    className={cn(
+                      'h-11',
+                      formData.type === 'income' && 'bg-emerald-600 hover:bg-emerald-700'
+                    )}
+                  >
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Income
+                  </Button>
+                </div>
+              </div>
+
+              {/* Icon Preview & Color */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-zinc-700">Preview</Label>
+                <div className="flex items-center gap-3 p-3 border border-zinc-200/60 rounded-xl bg-zinc-50/50">
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: formData.color }}
+                  >
+                    {/* Dynamic Icon Component */}
+                    {(() => {
+                      const IconComponent = getIconComponent(formData.icon);
+                      return <IconComponent className="h-6 w-6 text-white" />;
+                    })()}
+                  </div>
+                  <div>
+                    <p className="font-medium text-zinc-900">{formData.name || 'Category Name'}</p>
+                    <p className="text-xs text-zinc-500 capitalize">{formData.type} category</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Icon Picker */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-zinc-700">Icon</Label>
+                <div className="grid grid-cols-8 gap-1.5 max-h-32 overflow-y-auto p-2 border border-zinc-200/60 rounded-xl bg-white">
+                  {CATEGORY_ICONS.map((icon) => {
+                    const Icon = getIconComponent(icon.name);
+                    const isSelected = formData.icon === icon.name;
+                    return (
+                      <button
+                        key={icon.name}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, icon: icon.name })}
+                        disabled={submitting}
+                        className={cn(
+                          'relative p-2 rounded-lg flex items-center justify-center transition-all',
+                          isSelected
+                            ? 'bg-zinc-900 text-white'
+                            : 'bg-zinc-100/50 hover:bg-zinc-200/80 text-zinc-600'
+                        )}
+                        title={icon.label}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Color Picker */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-zinc-700">Color</Label>
+                <div className="grid grid-cols-8 gap-1.5">
+                  {PRESET_COLORS.map((color) => {
+                    const isSelected = formData.color === color;
+                    return (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, color })}
+                        disabled={submitting}
+                        className={cn(
+                          'relative h-8 rounded-lg transition-all',
+                          isSelected ? 'ring-2 ring-offset-2 ring-zinc-900' : 'hover:scale-110'
+                        )}
+                        style={{ backgroundColor: color }}
+                      >
+                        {isSelected && (
+                          <Check className="h-4 w-4 text-white absolute inset-0 m-auto" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Input
+                    type="color"
+                    value={formData.color}
+                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                    disabled={submitting}
+                    className="w-14 h-9 p-1 cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={formData.color}
+                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                    disabled={submitting}
+                    placeholder="#3b82f6"
+                    className="flex-1 h-9 font-mono text-sm bg-zinc-50/50 border-zinc-200/60"
+                  />
+                </div>
+              </div>
+            </ResponsiveModalBody>
+
+            <ResponsiveModalFooter className="flex flex-col sm:flex-row gap-3 border-t border-zinc-200/60 bg-zinc-50/50 p-4 sm:p-6 w-full shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCloseDialog}
+                disabled={submitting}
+                className="h-11 w-full sm:flex-1 text-base rounded-xl border-zinc-200/60 hover:bg-zinc-100 hover:text-zinc-900 order-2 sm:order-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="h-11 w-full sm:flex-1 bg-zinc-900 hover:bg-zinc-800 text-white text-base rounded-xl shadow-lg shadow-zinc-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] order-1 sm:order-2"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="mr-2 h-5 w-5" />
+                    {editingCategory ? 'Update Category' : 'Create Category'}
+                  </>
+                )}
+              </Button>
+            </ResponsiveModalFooter>
+          </form>
         </ResponsiveModalContent>
       </ResponsiveModal>
       <ConfirmModal

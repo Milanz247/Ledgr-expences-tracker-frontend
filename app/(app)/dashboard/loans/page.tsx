@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ResponsiveModal,
   ResponsiveModalContent,
@@ -26,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
-import { Plus, HandCoins, Trash2, Edit, DollarSign, Loader2, AlertCircle, History, Clock, TrendingUp, Layers, Activity } from 'lucide-react';
+import { Plus, HandCoins, Trash2, Edit, DollarSign, Loader2, AlertCircle, History, Clock, TrendingUp, Layers, Activity, Landmark, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -92,7 +93,6 @@ export default function LoansPage() {
   const [repayingLoan, setRepayingLoan] = useState<Loan | null>(null);
   const [repayData, setRepayData] = useState({
     amount: '',
-    category_id: '',
     payment_source: 'bank',
     bank_account_id: '',
     fund_source_id: '',
@@ -284,7 +284,6 @@ export default function LoansPage() {
     setRepayingLoan(loan);
     setRepayData({
       amount: '',
-      category_id: '',
       payment_source: 'bank',
       bank_account_id: '',
       fund_source_id: '',
@@ -303,12 +302,42 @@ export default function LoansPage() {
   const handleRepaySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!repayingLoan) return;
+    
+    // Frontend Validation: Check insufficient funds
+    const repayAmount = parseFloat(repayData.amount);
+    if (isNaN(repayAmount) || repayAmount <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+
+    if (repayData.payment_source === 'bank' && !repayData.bank_account_id) {
+       toast.error('Please select a bank account');
+       return;
+    }
+
+    if (repayData.payment_source === 'wallet' && !repayData.fund_source_id) {
+       toast.error('Please select a wallet');
+       return;
+    }
+
+    if (repayData.payment_source === 'bank' && repayData.bank_account_id) {
+       const account = bankAccounts.find(acc => acc.id.toString() === repayData.bank_account_id);
+       if (account && account.balance < repayAmount) {
+         toast.error('Insufficient funds in bank account');
+         return;
+       }
+    } else if (repayData.payment_source === 'wallet' && repayData.fund_source_id) {
+       const source = fundSources.find(src => src.id.toString() === repayData.fund_source_id);
+       if (source && source.amount < repayAmount) {
+         toast.error('Insufficient funds in wallet');
+         return;
+       }
+    }
 
     setSubmitting(true);
     try {
       const payload: any = {
         amount: parseFloat(repayData.amount),
-        category_id: parseInt(repayData.category_id),
         date: repayData.date,
         description: repayData.description || `Repayment to ${repayingLoan.lender_name}`,
       };
@@ -326,7 +355,7 @@ export default function LoansPage() {
       setRepayOpen(false);
       setRepayingLoan(null);
     } catch (error: any) {
-      console.error('Failed to process repayment:', error);
+      // console.error('Failed to process repayment:', error);
       toast.error(error.response?.data?.message || 'Failed to process repayment');
     } finally {
       setSubmitting(false);
@@ -707,84 +736,62 @@ export default function LoansPage() {
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Category</label>
-                  <Select
-                    value={repayData.category_id}
-                    onValueChange={(value) => setRepayData({ ...repayData, category_id: value })}
+
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Payment Method</label>
+                  <Tabs 
+                    value={repayData.payment_source} 
+                    onValueChange={(v) => setRepayData({ ...repayData, payment_source: v, bank_account_id: '', fund_source_id: '' })}
                   >
-                    <SelectTrigger className="w-full bg-zinc-50 border-zinc-200 h-10">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id.toString()}>
-                          {cat.icon} {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <TabsList className="w-full grid grid-cols-2 h-11 bg-zinc-100/80">
+                      <TabsTrigger value="bank" className="data-[state=active]:bg-white">
+                        <Landmark className="h-4 w-4 mr-1.5" />
+                        Bank
+                      </TabsTrigger>
+                      <TabsTrigger value="wallet" className="data-[state=active]:bg-white">
+                        <Wallet className="h-4 w-4 mr-1.5" />
+                        Wallet
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="bank" className="mt-3">
+                      <Select
+                        value={repayData.bank_account_id}
+                        onValueChange={(value) => setRepayData({ ...repayData, bank_account_id: value })}
+                      >
+                        <SelectTrigger className="w-full bg-zinc-50 border-zinc-200 h-10">
+                          <SelectValue placeholder="Select bank account" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {bankAccounts.map((acc) => (
+                            <SelectItem key={acc.id} value={acc.id.toString()}>
+                              {acc.bank_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TabsContent>
+
+                    <TabsContent value="wallet" className="mt-3">
+                      <Select
+                        value={repayData.fund_source_id}
+                        onValueChange={(value) => setRepayData({ ...repayData, fund_source_id: value })}
+                      >
+                        <SelectTrigger className="w-full bg-zinc-50 border-zinc-200 h-10">
+                          <SelectValue placeholder="Select wallet" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {fundSources.map((source) => (
+                            <SelectItem key={source.id} value={source.id.toString()}>
+                              {source.source_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TabsContent>
+                  </Tabs>
                 </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Payment Source</label>
-                  <Select
-                    value={repayData.payment_source}
-                    onValueChange={(value) =>
-                      setRepayData({ ...repayData, payment_source: value, bank_account_id: '', fund_source_id: '' })
-                    }
-                  >
-                    <SelectTrigger className="w-full bg-zinc-50 border-zinc-200 h-10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="bank">Bank Account</SelectItem>
-                      <SelectItem value="wallet">Wallet</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {repayData.payment_source === 'bank' && (
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Bank Account</label>
-                    <Select
-                      value={repayData.bank_account_id}
-                      onValueChange={(value) => setRepayData({ ...repayData, bank_account_id: value })}
-                    >
-                      <SelectTrigger className="w-full bg-zinc-50 border-zinc-200 h-10">
-                        <SelectValue placeholder="Select account" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {bankAccounts.map((acc) => (
-                          <SelectItem key={acc.id} value={acc.id.toString()}>
-                            {acc.bank_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {repayData.payment_source === 'wallet' && (
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Wallet</label>
-                    <Select
-                      value={repayData.fund_source_id}
-                      onValueChange={(value) => setRepayData({ ...repayData, fund_source_id: value })}
-                    >
-                      <SelectTrigger className="w-full bg-zinc-50 border-zinc-200 h-10">
-                        <SelectValue placeholder="Select wallet" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {fundSources.map((source) => (
-                          <SelectItem key={source.id} value={source.id.toString()}>
-                            {source.source_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-zinc-900 uppercase tracking-wide">Note (Optional)</label>
