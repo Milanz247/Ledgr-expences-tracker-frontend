@@ -42,6 +42,9 @@ import {
   Loader2,
   SlidersHorizontal,
   Check,
+  Activity,
+  Layers,
+  DollarSign,
 } from 'lucide-react';
 import { getIconComponent } from '@/lib/categoryIcons';
 import { format } from 'date-fns';
@@ -517,7 +520,9 @@ export default function IncomePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm font-medium text-emerald-600">Total Income</p>
-              <p className="text-2xl sm:text-3xl font-bold text-emerald-700 mt-1">{formatCurrency(getTotalIncome())}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-emerald-700 mt-1">
+                <CurrencyDisplay amount={getTotalIncome()} />
+              </p>
               <p className="text-[10px] sm:text-xs text-emerald-600/80 mt-1">
                 {pagination.total} {pagination.total === 1 ? 'transaction' : 'transactions'}
               </p>

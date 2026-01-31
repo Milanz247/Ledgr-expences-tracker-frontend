@@ -394,48 +394,32 @@ export default function LoansPage() {
           </Button>
         </div>
 
-        {/* Micro-Metrics Bento Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-          {/* Total Debt */}
-          <div className="bg-white border border-zinc-200/60 rounded-xl p-4 flex flex-col justify-between h-[100px]">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <TrendingUp className="h-3.5 w-3.5 text-rose-500" />
-              <span className="text-[10px] uppercase font-bold tracking-wider text-rose-500/80">Total Debt</span>
+        {/* Total Debt Card */}
+        <Card className="border-rose-200/60 bg-gradient-to-br from-rose-50/80 to-rose-100/40">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-xs sm:text-sm font-medium text-rose-600">Total Debt</p>
+                <p className="text-2xl sm:text-3xl font-bold text-rose-700 mt-1">
+                  <CurrencyDisplay amount={stats.total_debt} />
+                </p>
+                <div className="flex items-center gap-4 mt-2">
+                  <div>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Active</p>
+                    <p className="text-sm font-bold text-zinc-900">{stats.active_loans}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Paid</p>
+                    <p className="text-sm font-bold text-green-600">{stats.paid_loans}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-rose-100 flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 text-rose-600" />
+              </div>
             </div>
-            <div className="text-2xl font-bold text-rose-600 font-mono tracking-tight">
-              <CurrencyDisplay amount={stats.total_debt} />
-            </div>
-          </div>
-
-          {/* Active Loans */}
-          <div className="bg-white border border-zinc-200/60 rounded-xl p-4 flex flex-col justify-between h-[100px]">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <Layers className="h-3.5 w-3.5" />
-              <span className="text-[10px] uppercase font-bold tracking-wider">Active Loans</span>
-            </div>
-            <div className="text-2xl font-bold text-zinc-900 font-mono tracking-tight">{stats.active_loans}</div>
-          </div>
-
-          {/* Paid Loans */}
-          <div className="bg-white border border-zinc-200/60 rounded-xl p-4 flex flex-col justify-between h-[100px]">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <Activity className="h-3.5 w-3.5 text-green-500" />
-              <span className="text-[10px] uppercase font-bold tracking-wider text-green-500/80">Paid Loans</span>
-            </div>
-            <div className="text-2xl font-bold text-green-600 font-mono tracking-tight">{stats.paid_loans}</div>
-          </div>
-
-          {/* Average Balance */}
-          <div className="bg-zinc-100/50 border border-zinc-200/60 rounded-xl p-4 flex flex-col justify-between h-[100px]">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <DollarSign className="h-3.5 w-3.5" />
-              <span className="text-[10px] uppercase font-bold tracking-wider">Avg Balance</span>
-            </div>
-            <div className="text-2xl font-bold text-zinc-400 font-mono tracking-tight">
-              <CurrencyDisplay amount={avgBalance} />
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Filter Tabs */}
         <div className="flex items-center gap-6 border-b border-zinc-200/60 px-1">

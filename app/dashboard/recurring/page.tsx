@@ -366,14 +366,14 @@ export default function RecurringPage() {
         </div>
 
         {/* 2. Micro-Metrics Bento Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <div className="grid grid-cols-3 gap-3 lg:gap-4">
              {/* Metric 1 */}
             <div className="bg-white border border-zinc-200/60 rounded-xl p-4 flex flex-col justify-between h-[100px]">
                 <div className="flex items-center gap-2 text-zinc-500">
                     <Layers className="h-3.5 w-3.5" />
                     <span className="text-[10px] uppercase font-bold tracking-wider">Active Subs</span>
                 </div>
-                <div className="text-2xl font-bold text-zinc-900 font-mono tracking-tight">{activeSubs.length}</div>
+                <div className="text-lg sm:text-2xl font-bold text-zinc-900 font-mono tracking-tight">{activeSubs.length}</div>
             </div>
              {/* Metric 2 */}
             <div className="bg-white border border-zinc-200/60 rounded-xl p-4 flex flex-col justify-between h-[100px]">
@@ -381,7 +381,7 @@ export default function RecurringPage() {
                     <Activity className="h-3.5 w-3.5" />
                     <span className="text-[10px] uppercase font-bold tracking-wider">Monthly Commitment</span>
                 </div>
-                <div className="text-2xl font-bold text-zinc-900 font-mono tracking-tight">
+                <div className="text-lg sm:text-2xl font-bold text-zinc-900 font-mono tracking-tight">
                     <CurrencyDisplay amount={totalMonthlyCommitment} />
                 </div>
             </div>
@@ -391,18 +391,8 @@ export default function RecurringPage() {
                     <TrendingUp className="h-3.5 w-3.5 text-rose-500" />
                     <span className="text-[10px] uppercase font-bold tracking-wider text-rose-500/80">Next 7 Days Outflow</span>
                 </div>
-                <div className="text-2xl font-bold text-rose-600 font-mono tracking-tight">
+                <div className="text-lg sm:text-2xl font-bold text-rose-600 font-mono tracking-tight">
                      <CurrencyDisplay amount={next7DaysOutflow} />
-                </div>
-            </div>
-             {/* Metric 4 */}
-            <div className="bg-zinc-100/50 border border-zinc-200/60 rounded-xl p-4 flex flex-col justify-between h-[100px]">
-                <div className="flex items-center gap-2 text-zinc-400">
-                    <Zap className="h-3.5 w-3.5" />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Inactive Volume</span>
-                </div>
-                <div className="text-2xl font-bold text-zinc-400 font-mono tracking-tight">
-                     <CurrencyDisplay amount={savingsOpportunity} />
                 </div>
             </div>
         </div>
