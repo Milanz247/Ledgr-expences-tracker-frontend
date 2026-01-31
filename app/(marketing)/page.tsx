@@ -6,6 +6,7 @@ import Experience from "@/components/portfolio/Experience";
 import Education from "@/components/portfolio/Education";
 import Certifications from "@/components/portfolio/Certifications";
 import Projects from "@/components/portfolio/Projects";
+import Gallery from "@/components/portfolio/Gallery";
 import Blog from "@/components/portfolio/Blog";
 import Contact from "@/components/portfolio/Contact";
 
@@ -40,6 +41,8 @@ export default function Home() {
       <section id="projects" className="py-16">
         <Projects />
       </section>
+
+      <Gallery />
 
       <section id="blog" className="py-20">
         <Blog />

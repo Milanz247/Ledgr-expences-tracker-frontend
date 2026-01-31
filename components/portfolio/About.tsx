@@ -65,7 +65,7 @@ const About = () => {
                 <div className="relative w-full h-full bg-gradient-to-br from-card to-muted rounded-xl border border-border shadow-lg overflow-hidden">
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     <Image
-                      src="/images/aboutimg.jpg"
+                      src="/images/aboutimg"
                       alt="Milan Madusanka - Full-Stack Developer & System Engineer"
                       fill
                       className="object-cover rounded-xl"
